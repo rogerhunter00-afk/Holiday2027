@@ -192,6 +192,14 @@
     if (!input || !button || input.dataset.geminiBound === '1') return;
     input.dataset.geminiBound = '1';
 
+    // The screenshot is processed server-side through Supabase and Google Gemini,
+    // so make the privacy copy accurate rather than claiming on-device OCR.
+    document.querySelectorAll('.privacy').forEach((el) => {
+      if (/read this on your device/i.test(el.textContent || '')) {
+        el.textContent = 'Your screenshot is sent securely through Supabase to Google Gemini for analysis. Holiday2027 does not save the screenshot in its database; only the extracted trip details are used in the form.';
+      }
+    });
+
     // Replace the old Tesseract click handler completely.
     button.onclick = (event) => {
       event.preventDefault();
