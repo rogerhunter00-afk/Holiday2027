@@ -20,7 +20,80 @@ function hostLabel(url){try{let h=new URL(url).hostname.replace(/^www\./,'');if(
 function renderProfile(){if(!profile){$('join').classList.remove('hide');return}$('join').classList.add('hide');$('stack').innerHTML=`<div class="av" style="background:${profile.colour}">${profile.avatar?`<img src="${profile.avatar}" alt="">`:esc(profile.name[0].toUpperCase())}</div>`;$('peopleTitle').textContent=profile.name+"'s trip board"}function emptyState(){return`<div class="empty" style="grid-column:1/-1"><div class="bubble">✈</div><h3>No ideas yet</h3><p>Start fresh by pasting the first Airbnb, flight or activity link. We’ll try to build the card automatically.</p></div>`}function card(o){const voted=!!o.voted;const img=o.image?`<img src="${esc(o.image)}" alt="">`:`<div style="width:100%;height:100%;display:grid;place-items:center;font-size:42px;color:#aaa;background:#f3f3f3">${o.type==='flight'?'✈':o.type==='stay'?'⌂':'☀'}</div>`;return`<article class="card option" data-id="${esc(o.id)}" data-type="${esc(o.type)}" data-votes="${o.votes||0}"><div class="photo">${img}<span class="badge">${esc(o.source||hostLabel(o.url))}</span><button class="heart ${voted?'on':''}" data-vote="${esc(o.id)}">${voted?'♥':'♡'}</button></div><div class="body"><div class="row"><h3>${esc(o.title||'Untitled option')}</h3><span class="price">${esc(o.price||'')}</span></div>${o.note?`<p class="sub">${esc(o.note)}</p>`:''}<a class="openlink" href="${esc(o.url)}" target="_blank" rel="noopener">Open original ↗</a><div class="meta"><div class="who"><span class="mini" style="background:${esc(o.colour)}">${o.avatar?`<img src="${o.avatar}" alt="">`:esc((o.addedBy||'?')[0].toUpperCase())}</span>Added by ${esc(o.addedBy||'Someone')}</div><div style="display:flex;align-items:center;gap:10px"><div class="votes">♥ <b class="vc">${o.votes||0}</b></div><button class="more" data-delete="${esc(o.id)}" aria-label="Delete">⋯</button></div></div></div></article>`}function render(){let shown=options.filter(o=>{if(currentFilter==='all')return true;if(currentFilter==='shortlist')return!!o.voted;return o.type===currentFilter});$('grid').innerHTML=shown.length?shown.map(card).join(''):emptyState();document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>toggleVote(b.dataset.vote));document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeOption(b.dataset.delete))}function toggleVote(id){const o=options.find(x=>x.id===id);if(!o)return;o.voted=!o.voted;o.votes=Math.max(0,(o.votes||0)+(o.voted?1:-1));persist();render()}function removeOption(id){const o=options.find(x=>x.id===id);if(!o)return;if(confirm(`Remove "${o.title}" from this browser?`)){options=options.filter(x=>x.id!==id);persist();render();toast('Removed')}}
 $('avatar').addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('preview').src=r.result;$('preview').hidden=false;$('initial').hidden=true;$('preview').dataset.value=r.result};r.readAsDataURL(f)});$('name').addEventListener('input',()=>{$('initial').textContent=$('name').value.trim().charAt(0).toUpperCase()||'+'});$('joinBtn').onclick=()=>{const name=$('name').value.trim();if(!name){$('name').focus();return}profile={name,colour:colours[Math.floor(Math.random()*colours.length)],avatar:$('preview').dataset.value||''};localStorage.setItem(STORE_PROFILE,JSON.stringify(profile));renderProfile();render();toast(`Welcome, ${name}`)};$('profile').onclick=()=>{if(confirm('Reset your profile on this device?')){localStorage.removeItem(STORE_PROFILE);location.reload()}};
 const modal=$('modal');const openModal=()=>{modal.classList.add('open');setTimeout(()=>$('link').focus(),100)};const closeModal=()=>modal.classList.remove('open');$('add').onclick=openModal;$('navAdd').onclick=openModal;$('cancel').onclick=closeModal;modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
-async function fetchPreview(){const url=$('link').value.trim();if(!/^https?:\/\//i.test(url)){setStatus('Paste a full link beginning with http:// or https://','err');return}$('parseBtn').disabled=true;$('parseBtn').textContent='Fetching…';setStatus('Reading the link…');try{const endpoint='https://api.microlink.io/?url='+encodeURIComponent(url);const res=await fetch(endpoint,{headers:{'accept':'application/json'}});if(!res.ok)throw new Error('Preview service returned '+res.status);const json=await res.json();if(json.status!=='success'||!json.data)throw new Error(json.message||'Could not read this page');const d=json.data;const title=d.title||d.publisher||hostLabel(url);const description=d.description||'';const image=(d.image&&d.image.url)||'';draftImage=image;draftSource=d.publisher||hostLabel(url);$('nt').value=title||'';$('nn').value=description.slice(0,220);$('type').value=guessType(url,title);const px=extractPrice(description);if(px)$('np').value=px;$('prevTitle').textContent=title;$('prevSource').textContent=draftSource;if(image){$('prevImg').src=image;$('prevImg').style.display='block'}else{$('prevImg').removeAttribute('src');$('prevImg').style.background='#f2f2f2'}$('linkPreview').classList.add('show');setStatus('Preview found. Check the details below before adding it.','ok')}catch(err){draftImage='';draftSource=hostLabel(url);$('type').value=guessType(url);setStatus('I could not fully read that page. You can still add the link manually below. '+err.message,'err')}finally{$('parseBtn').disabled=false;$('parseBtn').textContent='Fetch'}}function setStatus(text,kind=''){const s=$('status');s.textContent=text;s.className='status show'+(kind?' '+kind:'')}$('parseBtn').onclick=fetchPreview;$('link').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fetchPreview()}});
+function getAirbnbListing(url){
+  try{
+    const u=new URL(url);
+    if(!u.hostname.toLowerCase().includes('airbnb.')) return null;
+    const m=u.pathname.match(/\/rooms\/(\d+)/i);
+    if(!m) return null;
+    return {id:m[1],canonical:`https://www.airbnb.com/rooms/${m[1]}`};
+  }catch{return null}
+}
+function isGenericAirbnbTitle(title=''){
+  return /^(airbnb\b|holiday rentals\b)|holiday rentals|cabins, beach houses|unique homes\s*&\s*experiences/i.test(title.trim());
+}
+function inferAirbnbTitle(description=''){
+  const d=description.replace(/\*\*/g,' ').replace(/\s+/g,' ').trim();
+  let m=d.match(/welcome to the\s+(.+?)\s+at\s+([^,.!]+)[,.!]/i);
+  if(m) return `${m[2].trim()} | ${m[1].trim()}`;
+  m=d.match(/welcome to\s+([^.!]{4,90})[.!]/i);
+  return m?m[1].trim():'';
+}
+async function microlinkPreview(target,airbnb=false){
+  const q=new URLSearchParams({url:target});
+  if(airbnb){
+    q.set('prerender','true');
+    q.set('data.airbnbTitle.selector','h1');
+    q.set('data.airbnbTitle.attr','text');
+    q.set('data.airbnbImage.evaluate',`Array.from(document.images).map(i=>i.currentSrc||i.src).find(src=>src&&src.includes('muscache.com/im/pictures/'))||''`);
+    q.set('data.airbnbImage.type','url');
+    q.set('data.airbnbText.selector','main');
+    q.set('data.airbnbText.attr','text');
+  }
+  const res=await fetch('https://api.microlink.io/?'+q.toString(),{headers:{accept:'application/json'}});
+  if(!res.ok) throw new Error('Preview service returned '+res.status);
+  const json=await res.json();
+  if(json.status!=='success'||!json.data) throw new Error(json.message||'Could not read this page');
+  return json.data;
+}
+async function fetchPreview(){
+  const url=$('link').value.trim();
+  if(!/^https?:\/\//i.test(url)){setStatus('Paste a full link beginning with http:// or https://','err');return}
+  $('parseBtn').disabled=true;$('parseBtn').textContent='Fetching…';setStatus('Reading the link…');
+  try{
+    const airbnb=getAirbnbListing(url);
+    const target=airbnb?airbnb.canonical:url;
+    const d=await microlinkPreview(target,!!airbnb);
+    const description=(d.description||'').trim();
+    let title=(typeof d.airbnbTitle==='string'&&d.airbnbTitle.trim())||d.title||d.publisher||hostLabel(url);
+    if(airbnb&&isGenericAirbnbTitle(title)) title=inferAirbnbTitle(description)||`Airbnb stay #${airbnb.id}`;
+    let image='';
+    if(typeof d.airbnbImage==='string') image=d.airbnbImage;
+    else if(d.airbnbImage&&d.airbnbImage.url) image=d.airbnbImage.url;
+    if(!image) image=(d.image&&d.image.url)||'';
+    draftImage=image; draftSource=airbnb?'Airbnb':(d.publisher||hostLabel(url));
+    $('nt').value=title||'';
+    $('nn').value=description.slice(0,260);
+    $('type').value=guessType(url,title);
+    const px=extractPrice(description); if(px)$('np').value=px;
+    $('prevTitle').textContent=title;
+    $('prevSource').textContent=draftSource+(airbnb?' · listing '+airbnb.id:'');
+    if(image){$('prevImg').src=image;$('prevImg').style.display='block'}else{$('prevImg').removeAttribute('src');$('prevImg').style.background='#f2f2f2'}
+    $('linkPreview').classList.add('show');
+    if(airbnb){
+      setStatus('Airbnb listing read from its canonical room page. Check the photo/title below. Price may stay blank unless the shared URL includes dates and pricing.','ok');
+    }else{
+      setStatus('Preview found. Check the details below before adding it.','ok');
+    }
+  }catch(err){
+    draftImage='';draftSource=hostLabel(url);
+    $('type').value=guessType(url);
+    setStatus('I could not fully read that page. You can still add the link manually below. '+err.message,'err');
+  }finally{
+    $('parseBtn').disabled=false;$('parseBtn').textContent='Fetch';
+  }
+}
+function setStatus(text,kind=''){const s=$('status');s.textContent=text;s.className='status show'+(kind?' '+kind:'')}$('parseBtn').onclick=fetchPreview;$('link').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fetchPreview()}});
 $('save').onclick=()=>{const url=$('link').value.trim(),title=$('nt').value.trim();if(!/^https?:\/\//i.test(url)){setStatus('Add a valid link first.','err');return}if(!title){$('nt').focus();return}const o={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)),type:$('type').value,url,title,price:$('np').value.trim(),note:$('nn').value.trim(),image:draftImage,source:draftSource||hostLabel(url),addedBy:profile?.name||'You',colour:profile?.colour||'#DFE7FD',avatar:profile?.avatar||'',votes:0,voted:false,createdAt:Date.now()};options.unshift(o);persist();render();closeModal();resetForm();toast('Added to the board')};function resetForm(){['link','nt','np','nn'].forEach(id=>$(id).value='');draftImage='';draftSource='';$('status').className='status';$('linkPreview').classList.remove('show')}document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');currentFilter=c.dataset.f;render()});$('navShort').onclick=()=>{currentFilter='shortlist';document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x.dataset.f==='shortlist'));render()};$('sort').onclick=()=>{options.sort((a,b)=>(b.votes||0)-(a.votes||0));persist();render();toast('Sorted by votes')};$('peopleBtn').onclick=()=>toast('Shared people list comes with the backend');renderProfile();render();
 </script>
 </body>
