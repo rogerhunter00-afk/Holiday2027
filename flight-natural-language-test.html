@@ -15,7 +15,7 @@ h1{font-size:34px;line-height:1.02;letter-spacing:-1.4px;margin:8px 0 10px}.intr
 .card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:18px;box-shadow:0 10px 30px #00000008;margin-bottom:16px}
 label{display:block;font-size:13px;font-weight:850;margin-bottom:8px}.prompt{width:100%;min-height:155px;border:1px solid #d9d9d9;border-radius:18px;padding:16px;resize:vertical;outline:none;font-size:17px;line-height:1.45;background:#fff}.prompt:focus{border-color:#aaa;box-shadow:0 0 0 4px #00000008}
 .examples{display:flex;gap:8px;overflow:auto;padding:10px 0 2px;scrollbar-width:none}.examples::-webkit-scrollbar{display:none}.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800}
-.primary{width:100%;border:0;border-radius:16px;padding:15px 18px;background:#222;color:#fff;font-weight:900;margin-top:14px}.primary[disabled]{opacity:.55}.subtle{margin-top:10px;font-size:12px;color:#999;line-height:1.45}
+.primary{width:100%;border:0;border-radius:16px;padding:15px 18px;background:#222;color:#fff;font-weight:900;margin-top:14px}.primary.pink{background:linear-gradient(90deg,#ff385c,#e31c5f)}.primary[disabled]{opacity:.5}.subtle{margin-top:10px;font-size:12px;color:#999;line-height:1.45}
 .loading{display:none;margin-top:14px;padding:13px 14px;border-radius:16px;background:#f7f7f7;font-size:13px;color:#555}.loading.show{display:block}
 .result{display:none}.result.show{display:block}.summary{background:var(--green);color:var(--greenInk);border-radius:18px;padding:15px;line-height:1.45;font-size:14px}.summary b{display:block;margin-bottom:4px}
 .sectionTitle{font-size:17px;margin:20px 0 10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kv{border:1px solid var(--line);border-radius:16px;padding:12px;min-width:0}.kv span{display:block;color:#888;font-size:11px;margin-bottom:5px}.kv b{font-size:14px;line-height:1.35;word-break:break-word}
@@ -23,25 +23,27 @@ label{display:block;font-size:13px;font-weight:850;margin-bottom:8px}.prompt{wid
 .missing{margin-top:12px;padding:12px;border-radius:15px;background:#fff8e7;color:#755700;font-size:13px}.missing:empty{display:none}
 details{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}summary{cursor:pointer;font-size:13px;font-weight:800;color:#555}pre{overflow:auto;background:#111;color:#f5f5f5;border-radius:16px;padding:14px;font-size:11px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
 .apiBox{margin-top:12px;padding:13px;border-radius:16px;background:#f7f7f7}.apiBox b{font-size:13px}.apiBox code{display:block;margin-top:8px;font-size:11px;line-height:1.5;word-break:break-all;color:#555}.pill{display:inline-block;margin-top:9px;border-radius:999px;background:#eee;padding:6px 9px;font-size:11px;font-weight:800;color:#666}.err{display:none;margin-top:12px;border-radius:15px;background:#fff3f3;color:#9b2c2c;padding:12px;font-size:13px;line-height:1.4}.err.show{display:block}
-@media(max-width:520px){.grid{grid-template-columns:1fr}.app{padding-left:14px;padding-right:14px}h1{font-size:31px}}
+.liveBlock{display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:18px}.liveBlock.show{display:block}.liveHint{font-size:12px;color:#777;line-height:1.45;margin:7px 0 0}.liveMeta{display:none;margin:12px 0 0;padding:11px 12px;border-radius:14px;background:#f7f7f7;color:#666;font-size:12px}.liveMeta.show{display:block}
+.flightResults{display:grid;gap:12px;margin-top:14px}.flightCard{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#fff}.flightImg{width:100%;aspect-ratio:16/7;object-fit:cover;background:#f1f1f1;display:block}.flightBody{padding:14px}.flightTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.flightTop h3{font-size:18px;line-height:1.15;margin:0}.fare{font-size:20px;font-weight:900;white-space:nowrap}.route{font-size:13px;color:#555;margin-top:8px;line-height:1.45}.route b{color:#222}.smallFacts{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.fact{font-size:11px;font-weight:750;background:#f4f4f4;border-radius:999px;padding:6px 8px}.flightDesc{margin:10px 0 0;color:#777;font-size:12px;line-height:1.45}.openFlight{display:inline-flex;margin-top:12px;color:#222;font-size:12px;font-weight:850;text-decoration:none}.emptyFlights{padding:18px;border-radius:16px;background:#fff8e7;color:#755700;font-size:13px;line-height:1.45}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.app{padding-left:14px;padding-right:14px}h1{font-size:31px}.flightTop h3{font-size:16px}.fare{font-size:18px}}
 </style>
 </head>
 <body>
 <main class="app">
   <div class="eyebrow">Holiday2027 · Flight prototype</div>
   <h1>Describe the flight normally.</h1>
-  <p class="intro">This test checks whether Gemini 3.1 Flash-Lite can turn a casual sentence into a clean flight-search request before we connect the live flight API.</p>
+  <p class="intro">Gemini turns a casual sentence into a structured request, then the second step can run that request against live Google Flights data through SerpApi.</p>
 
   <section class="card">
     <label for="q">What are you looking for?</label>
-    <textarea id="q" class="prompt" placeholder="e.g. Find return flights to Malta from any Scottish airport leaving between 3 and 10 May 2027 for about a week, ideally early flights, under £100 per person."></textarea>
+    <textarea id="q" class="prompt" placeholder="e.g. Find return flights from any Scottish airport leaving between 3 and 10 May 2027 for about a week, ideally early flights, under £100 per person."></textarea>
     <div class="examples">
       <button class="chip" data-example="Find return flights to Malta from any Scottish airport leaving between 3 and 10 May 2027 for 7 nights, ideally early morning flights, under £100 per person.">Malta · flexible</button>
+      <button class="chip" data-example="Find return flights from Glasgow or Prestwick sometime in May 2027 for 4 to 5 nights, cheapest first, under £100 each. I don't mind where we go.">Anywhere · cheap</button>
       <button class="chip" data-example="One way to Faro from Glasgow or Edinburgh on 12 May 2027, direct only, before 10am, max £80.">Faro · one way</button>
-      <button class="chip" data-example="Flights to Mallorca from anywhere in Scotland sometime between 15 and 22 May 2027, 5 to 7 nights, cheapest options first, under £120 each.">Mallorca · flexible</button>
     </div>
     <button id="go" class="primary">Understand my request</button>
-    <div class="subtle">The model does not search prices yet on this page. It creates the exact structured search we can send to Google Flights/SerpApi next.</div>
+    <div class="subtle">Parsing with Gemini does not spend a SerpApi search. A live search only happens when you press the separate flight-search button.</div>
     <div id="loading" class="loading">Reading your request with Gemini 3.1 Flash-Lite…</div>
     <div id="error" class="err"></div>
   </section>
@@ -63,15 +65,24 @@ details{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}summar
     <div id="prefs" class="tags"></div>
     <div id="missing" class="missing"></div>
 
-    <h2 class="sectionTitle">Next API request</h2>
+    <h2 class="sectionTitle">API request</h2>
     <div class="apiBox">
       <b id="engine">—</b>
       <span class="pill" id="why">—</span>
       <code id="params"></code>
     </div>
 
+    <div id="liveBlock" class="liveBlock">
+      <h2 class="sectionTitle" style="margin-top:0">Live search</h2>
+      <button id="searchLive" class="primary pink">Search live flights</button>
+      <p id="liveHint" class="liveHint">This makes one SerpApi request and returns current Google Flights deal data.</p>
+      <div id="searchError" class="err"></div>
+      <div id="liveMeta" class="liveMeta"></div>
+      <div id="flightResults" class="flightResults"></div>
+    </div>
+
     <details>
-      <summary>Raw JSON</summary>
+      <summary>Raw parsed JSON</summary>
       <pre id="raw"></pre>
     </details>
   </section>
@@ -81,10 +92,12 @@ details{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}summar
 <script>
 const SUPABASE_URL='https://bpqmcjbnaukbejznzqwr.supabase.co';
 const SUPABASE_KEY='sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
-const FUNCTION_URL=SUPABASE_URL+'/functions/v1/parse-flight-request';
+const PARSE_URL=SUPABASE_URL+'/functions/v1/parse-flight-request';
+const SEARCH_URL=SUPABASE_URL+'/functions/v1/search-flights';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let sessionPromise=null;
+let parsedData=null;
 
 async function session(){
   if(sessionPromise)return sessionPromise;
@@ -97,6 +110,7 @@ async function session(){
   })();
   try{return await sessionPromise}catch(e){sessionPromise=null;throw e}
 }
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function showDateRange(a,b){
   if(!a&&!b)return 'Not specified';
   if(a===b)return a;
@@ -107,11 +121,18 @@ function money(i){
   const symbol=i.currency==='GBP'?'£':i.currency==='EUR'?'€':i.currency==='USD'?'$':i.currency+' ';
   return `${symbol}${i.max_price} ${i.price_basis==='total'?'total':'per person'}`;
 }
+function symbol(currency){return currency==='GBP'?'£':currency==='EUR'?'€':currency==='USD'?'$':currency+' '}
+function mins(v){
+  if(typeof v!=='number')return '';
+  const h=Math.floor(v/60),m=v%60;
+  return h?`${h}h${m?` ${m}m`:''}`:`${m}m`;
+}
 function render(data){
+  parsedData=data;
   const i=data.intent||{};
   $('interpretation').textContent=i.interpretation||'Parsed successfully.';
   $('origins').textContent=(i.departure_airports||[]).join(', ')||i.departure_scope||'Not specified';
-  $('destination').textContent=i.destination_text ? `${i.destination_text}${(i.arrival_airports||[]).length?' · '+i.arrival_airports.join(', '):''}` : 'Not specified';
+  $('destination').textContent=i.destination_text ? `${i.destination_text}${(i.arrival_airports||[]).length?' · '+i.arrival_airports.join(', '):''}` : 'Anywhere · discover cheap destinations';
   $('departDates').textContent=showDateRange(i.outbound_date_start,i.outbound_date_end);
   let r=showDateRange(i.return_date_start,i.return_date_end);
   if(i.trip_length_days_min||i.trip_length_days_max){
@@ -126,15 +147,84 @@ function render(data){
   if(i.stops==='nonstop')prefs.push(['direct only','good']); else if(i.stops==='one_or_less')prefs.push(['max 1 stop','good']);
   prefs.push([i.sort_priority==='price'?'cheapest first':i.sort_priority==='departure_time'?'earliest first':'balanced','']);
   prefs.push([i.trip_type||'trip type unspecified','']);
-  $('prefs').innerHTML=prefs.map(([t,c])=>`<span class="tag ${c}">${t}</span>`).join('');
+  $('prefs').innerHTML=prefs.map(([t,c])=>`<span class="tag ${c}">${esc(t)}</span>`).join('');
+
+  const blocking=data.blocking_fields||[];
   const missing=i.missing_fields||[];
-  $('missing').textContent=missing.length?'Still needed before a precise live search: '+missing.join(', '):'';
+  if(blocking.length)$('missing').textContent='Needed before a live search: '+blocking.join(', ');
+  else if(missing.length)$('missing').textContent='Gemini noted: '+missing.join(', ');
+  else $('missing').textContent='';
+
   $('engine').textContent=data.serpapi_plan?.engine||'—';
   $('why').textContent=data.serpapi_plan?.reason||'—';
   const p=data.serpapi_plan?.params||{};
   $('params').textContent=Object.entries(p).map(([k,v])=>`${k}=${v}`).join('&');
   $('raw').textContent=JSON.stringify(data,null,2);
   $('result').classList.add('show');
+  $('liveBlock').classList.add('show');
+  $('searchLive').disabled=!data.live_search_ready;
+  $('liveHint').textContent=data.live_search_ready
+    ? (data.serpapi_plan?.note||'Ready to send this request to live Google Flights data via SerpApi.')
+    : 'Add the missing information above, then parse the sentence again.';
+  $('searchError').classList.remove('show');
+  $('liveMeta').classList.remove('show');
+  $('flightResults').innerHTML='';
+}
+
+function renderFlights(data){
+  const rows=data.results||[];
+  $('liveMeta').textContent=`${rows.length} result${rows.length===1?'':'s'} · ${data.engine} · ${data.elapsed_ms} ms`;
+  $('liveMeta').classList.add('show');
+  if(!rows.length){
+    $('flightResults').innerHTML='<div class="emptyFlights">No matching flights came back for these filters. Try increasing the budget, widening the dates, or removing a stop/time restriction.</div>';
+    return;
+  }
+  $('flightResults').innerHTML=rows.map(r=>{
+    if(r.kind==='deal'){
+      const dates=[r.outbound_date,r.return_date].filter(Boolean).join(' → ');
+      const route=[r.departure_airport,r.arrival_airport].filter(Boolean).join(' → ');
+      const facts=[];
+      if(r.airline)facts.push(r.airline);
+      if(typeof r.stops==='number')facts.push(r.stops===0?'Direct':`${r.stops} stop${r.stops===1?'':'s'}`);
+      if(r.duration_minutes)facts.push(mins(r.duration_minutes));
+      if(typeof r.discount_percentage==='number')facts.push(`${r.discount_percentage}% below average`);
+      return `<article class="flightCard">
+        ${r.image?`<img class="flightImg" src="${esc(r.image)}" alt="${esc(r.destination)}">`:''}
+        <div class="flightBody">
+          <div class="flightTop"><h3>${esc(r.destination)}${r.country?` <span style="color:#888;font-weight:600">· ${esc(r.country)}</span>`:''}</h3><div class="fare">${symbol(r.currency)}${Number(r.price).toLocaleString('en-GB')}</div></div>
+          <div class="route">${route?`<b>${esc(route)}</b><br>`:''}${dates?esc(dates):''}</div>
+          <div class="smallFacts">${facts.map(x=>`<span class="fact">${esc(x)}</span>`).join('')}</div>
+          ${r.description?`<p class="flightDesc">${esc(r.description)}</p>`:''}
+          ${r.google_flights_url?`<a class="openFlight" target="_blank" rel="noopener" href="${esc(r.google_flights_url)}">Open in Google Flights ↗</a>`:''}
+        </div>
+      </article>`;
+    }
+    const facts=[];
+    if(r.airline)facts.push(r.airline);
+    if(typeof r.stops==='number')facts.push(r.stops===0?'Direct':`${r.stops} stop${r.stops===1?'':'s'}`);
+    if(r.total_duration)facts.push(mins(r.total_duration));
+    return `<article class="flightCard"><div class="flightBody">
+      <div class="flightTop"><h3>${esc([r.departure_airport,r.arrival_airport].filter(Boolean).join(' → ')||'Flight')}</h3><div class="fare">${symbol(r.currency)}${Number(r.price).toLocaleString('en-GB')}</div></div>
+      <div class="route">${r.departure_time?`Depart <b>${esc(r.departure_time)}</b>`:''}${r.arrival_time?` · arrive <b>${esc(r.arrival_time)}</b>`:''}</div>
+      <div class="smallFacts">${facts.map(x=>`<span class="fact">${esc(x)}</span>`).join('')}</div>
+    </div></article>`;
+  }).join('');
+}
+
+async function searchLive(){
+  if(!parsedData?.live_search_ready)return;
+  const b=$('searchLive');
+  b.disabled=true;b.textContent='Searching Google Flights…';
+  $('searchError').classList.remove('show');$('liveMeta').classList.remove('show');$('flightResults').innerHTML='';
+  try{
+    const s=await session();
+    const r=await fetch(SEARCH_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({serpapi_plan:parsedData.serpapi_plan,intent:parsedData.intent})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||`Flight search failed (${r.status})`);
+    renderFlights(data);
+  }catch(e){
+    $('searchError').textContent=e.message||String(e);$('searchError').classList.add('show');
+  }finally{b.disabled=false;b.textContent='Search live flights'}
 }
 
 async function run(){
@@ -143,7 +233,7 @@ async function run(){
   $('go').disabled=true;$('go').textContent='Reading…';$('loading').classList.add('show');$('error').classList.remove('show');$('result').classList.remove('show');
   try{
     const s=await session();
-    const r=await fetch(FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({query:q})});
+    const r=await fetch(PARSE_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({query:q})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||`Request failed (${r.status})`);
     render(data);
@@ -151,6 +241,7 @@ async function run(){
   finally{$('go').disabled=false;$('go').textContent='Understand my request';$('loading').classList.remove('show')}
 }
 $('go').onclick=run;
+$('searchLive').onclick=searchLive;
 $('q').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')run()});
 document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{$('q').value=b.dataset.example;run()});
 </script>
