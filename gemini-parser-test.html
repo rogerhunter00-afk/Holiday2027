@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Holiday2027 · Gemini Parser Test</title>
+<style>
+:root{--ink:#222;--muted:#717171;--line:#e7e7e7;--pink:#ff385c;--soft:#f7f7f7}
+*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.wrap{max-width:760px;margin:auto;padding:24px 18px 80px}h1{font-size:30px;letter-spacing:-1px;margin:0 0 8px}p{color:var(--muted);line-height:1.5}.card{border:1px solid var(--line);border-radius:24px;padding:18px;margin-top:18px}.upload{position:relative;border:1.5px dashed #ccc;border-radius:18px;padding:18px;min-height:130px;display:flex;gap:14px;align-items:center;background:#fafafa}.upload input{position:absolute;inset:0;opacity:0}.thumb{width:92px;height:118px;border-radius:12px;object-fit:cover;background:#eee;display:none}.upload.has .thumb{display:block}.upload b{display:block;font-size:16px}.upload span{display:block;color:var(--muted);font-size:13px;margin-top:5px}.row{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}.btn{border:0;border-radius:15px;padding:14px 16px;font-weight:850;background:#222;color:#fff}.btn.alt{background:linear-gradient(90deg,#ff385c,#e31c5f)}.btn:disabled{opacity:.55}.result{margin-top:14px;border-radius:18px;background:#f7f7f7;padding:14px;display:none}.result.show{display:block}.result.ok{background:#effaf4}.result.err{background:#fff2f2;color:#9b2c2c}.grid{display:grid;grid-template-columns:1fr;gap:14px}.kv{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:7px 0;border-bottom:1px solid #eee;font-size:14px}.kv:last-child{border:0}.kv b{color:#666}.raw{white-space:pre-wrap;word-break:break-word;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:#111;color:#eee;padding:12px;border-radius:14px;max-height:300px;overflow:auto;margin-top:12px}.manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-top:12px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.field input{width:100%;border:1px solid #d8d8d8;border-radius:14px;padding:13px 14px;background:#fff}.pp{margin-top:14px;padding:14px;border-radius:16px;background:#f7f7f7;font-weight:800}.note{font-size:12px;color:#888}@media(min-width:700px){.row{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr 1fr}.manual-grid{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gemini screenshot parser test</h1>
+  <p>Upload the same Airbnb/flight booking screenshot and compare Gemini 3.1 Flash‑Lite with Gemini 3 Flash. This page is just for testing extraction quality and speed.</p>
+
+  <div class="card">
+    <div class="upload" id="uploadBox">
+      <img id="thumb" class="thumb" alt="">
+      <div><b id="fileName">Choose a screenshot</b><span>Dates, guests, total price, rating, cancellation etc.</span></div>
+      <input id="image" type="file" accept="image/*">
+    </div>
+    <div class="row">
+      <button class="btn" id="lite">Run Gemini 3.1 Flash‑Lite</button>
+      <button class="btn alt" id="flash">Run Gemini 3 Flash</button>
+    </div>
+    <button class="btn" id="both" style="width:100%;margin-top:10px;background:#555">Run both</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 style="margin:0">3.1 Flash‑Lite</h2>
+      <div id="liteResult" class="result"></div>
+    </div>
+    <div class="card">
+      <h2 style="margin:0">3 Flash</h2>
+      <div id="flashResult" class="result"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Manual fallback UX test</h2>
+    <p>If screenshot parsing ever fails, this is the lowest-friction fallback I’d use in the real app.</p>
+    <div class="manual-grid">
+      <div class="field"><label>Check-in</label><input id="checkin" type="date"></div>
+      <div class="field"><label>Check-out</label><input id="checkout" type="date"></div>
+      <div class="field"><label>Guests</label><input id="guests" type="number" inputmode="numeric" min="1" value="8"></div>
+      <div class="field"><label>Total £</label><input id="total" type="number" inputmode="decimal" step="0.01" placeholder="1788.75"></div>
+    </div>
+    <div class="pp" id="pp">Per person: —</div>
+    <div class="note">On iPhone, the total field opens the numeric keypad. Per-person cost updates automatically.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://bpqmcjbnaukbejznzqwr.supabase.co';
+const SUPABASE_KEY='sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
+const FUNCTION_URL=SUPABASE_URL+'/functions/v1/test-travel-vision';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sessionPromise=null;
+
+async function getSession(){
+  if(sessionPromise) return sessionPromise;
+  sessionPromise=(async()=>{
+    const {data}=await sb.auth.getSession();
+    if(data?.session) return data.session;
+    const r=await sb.auth.signInAnonymously();
+    if(r.error) throw r.error;
+    return r.data.session;
+  })();
+  try{return await sessionPromise}catch(e){sessionPromise=null;throw e}
+}
+
+const image=document.getElementById('image');
+image.addEventListener('change',()=>{
+  const f=image.files?.[0]; if(!f)return;
+  document.getElementById('uploadBox').classList.add('has');
+  document.getElementById('fileName').textContent=f.name;
+  const u=URL.createObjectURL(f); document.getElementById('thumb').src=u;
+});
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function show(el,html,kind='ok'){el.className='result show '+kind;el.innerHTML=html}
+function renderResult(el,p){
+  const d=p.parsed||{};
+  const rows=[
+    ['Title',d.title],['Dates',d.date_text],['Guests',d.guests_text||d.guests_count],['Total',d.total_price!=null?((d.currency||'')+' '+d.total_price):null],['Per person',d.per_person_price!=null?((d.currency||'')+' '+d.per_person_price):null],['Cancellation',d.cancellation_text||(d.free_cancellation===true?'Free cancellation':null)],['Rating',d.rating],['Reviews',d.review_count],['Confidence',d.confidence],['Time',p.elapsed_ms+' ms']
+  ].filter(x=>x[1]!==null&&x[1]!==undefined&&x[1]!=='');
+  show(el,rows.map(([k,v])=>`<div class="kv"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')+`<details><summary>Raw JSON</summary><div class="raw">${esc(JSON.stringify(p,null,2))}</div></details>`,'ok');
+}
+
+async function run(model,el){
+  const f=image.files?.[0]; if(!f){show(el,'Choose a screenshot first.','err');return}
+  show(el,'Reading screenshot…');
+  try{
+    const s=await getSession();
+    const fd=new FormData(); fd.append('image',f,f.name); fd.append('model',model);
+    const r=await fetch(FUNCTION_URL,{method:'POST',headers:{Authorization:'Bearer '+s.access_token,apikey:SUPABASE_KEY},body:fd});
+    const p=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(p.error||('HTTP '+r.status));
+    renderResult(el,p);
+  }catch(e){show(el,esc(e.message||e),'err')}
+}
+
+document.getElementById('lite').onclick=()=>run('gemini-3.1-flash-lite',document.getElementById('liteResult'));
+document.getElementById('flash').onclick=()=>run('gemini-3-flash-preview',document.getElementById('flashResult'));
+document.getElementById('both').onclick=()=>Promise.all([
+  run('gemini-3.1-flash-lite',document.getElementById('liteResult')),
+  run('gemini-3-flash-preview',document.getElementById('flashResult'))
+]);
+
+function calc(){const g=Number(document.getElementById('guests').value);const t=Number(document.getElementById('total').value);document.getElementById('pp').textContent=g>0&&t>0?'Per person: £'+(t/g).toFixed(2):'Per person: —'}
+document.getElementById('guests').oninput=calc;document.getElementById('total').oninput=calc;
+</script>
+</body>
+</html>
