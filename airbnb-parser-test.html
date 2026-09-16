@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Airbnb URL Parser Test</title>
+<style>
+:root{--ink:#222;--muted:#717171;--line:#e8e8e8;--pink:#ff385c;--soft:#f7f7f7}
+*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.wrap{max-width:980px;margin:auto;padding:22px 16px 60px}h1{font-size:30px;letter-spacing:-1px;margin:6px 0}p{color:var(--muted);line-height:1.5}.box{border:1px solid var(--line);border-radius:22px;padding:16px;margin-top:16px}.field{display:grid;grid-template-columns:1fr auto;gap:8px}.field input{width:100%;border:1px solid #d8d8d8;border-radius:14px;padding:14px;font:inherit}.btn{border:0;border-radius:14px;background:#222;color:#fff;padding:0 18px;font:inherit;font-weight:800}.btn:disabled{opacity:.5}.sample{border:0;background:none;text-decoration:underline;padding:8px 0;color:#555}.tests{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}.test{border:1px solid var(--line);border-radius:22px;padding:16px;background:#fff}.test h2{font-size:19px;margin:0}.tag{display:inline-block;margin-top:7px;background:#f3f3f3;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800}.run{width:100%;margin-top:14px;padding:13px;border:0;border-radius:14px;background:#222;color:#fff;font-weight:800}.run.alt{background:linear-gradient(90deg,#ff385c,#e31c5f)}.status{margin-top:12px;background:#f7f7f7;border-radius:14px;padding:12px;font-size:13px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}.good{background:#eef9f2}.bad{background:#fff2f2;color:#9b2c2c}.hero{width:100%;border-radius:16px;margin-top:12px;display:none}.kv{display:grid;grid-template-columns:120px 1fr;gap:7px 12px;margin-top:12px;font-size:13px}.kv b{color:#666}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{background:#f4f4f4;border-radius:999px;padding:6px 9px;font-size:11px}.note{font-size:12px;color:#888;margin-top:10px}.raw{margin-top:10px}.raw summary{cursor:pointer;font-size:12px;color:#666}.raw pre{font-size:11px;overflow:auto;background:#111;color:#eee;padding:12px;border-radius:12px;max-height:280px}.back{display:inline-block;margin-bottom:10px;color:#222;text-decoration:none;font-weight:700}@media(min-width:780px){.tests{grid-template-columns:1fr 1fr}.wrap{padding-top:36px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="./">← Holiday2027</a>
+<h1>Airbnb URL parser test</h1>
+<p>This page compares the two automatic routes on the same Airbnb URL. <b>Test 1</b> asks Airbnb directly for its HTML. <b>Test 2</b> opens the page in a real remote browser, takes a screenshot, then lets Gemini 3.1 Flash-Lite read what actually rendered.</p>
+<div class="box">
+  <div class="field"><input id="url" type="url" placeholder="Paste Airbnb room URL"><button class="btn" id="both">Test both</button></div>
+  <button class="sample" id="sample">Use our recent test Airbnb link</button>
+  <div class="note">Rendered-browser tests use Microlink's free browser endpoint, currently limited to 25 requests/day on its free plan.</div>
+</div>
+<div class="tests">
+  <section class="test">
+    <h2>1. Direct page extraction</h2><span class="tag">FAST · no browser</span>
+    <p>Fetches the canonical Airbnb room page server-side and searches the returned HTML for listing titles and property images.</p>
+    <button class="run" id="directBtn">Run direct test</button>
+    <div id="directStatus" class="status">Not run yet.</div>
+    <img id="directImg" class="hero" alt="Direct result image">
+    <div id="directResult"></div>
+  </section>
+  <section class="test">
+    <h2>2. Rendered browser + Gemini</h2><span class="tag">REAL BROWSER · GEMINI VISION</span>
+    <p>Renders the Airbnb page in a remote browser, captures what a browser actually sees, then sends that screenshot to Gemini for extraction.</p>
+    <button class="run alt" id="renderBtn">Run rendered test</button>
+    <div id="renderStatus" class="status">Not run yet.</div>
+    <img id="renderImg" class="hero" alt="Rendered page screenshot">
+    <div id="renderResult"></div>
+  </section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://bpqmcjbnaukbejznzqwr.supabase.co';
+const SUPABASE_KEY='sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
+const ENDPOINT=SUPABASE_URL+'/functions/v1/test-airbnb-url';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let sessionPromise;
+async function session(){if(!sessionPromise)sessionPromise=(async()=>{let {data}=await sb.auth.getSession();if(data.session)return data.session;let r=await sb.auth.signInAnonymously();if(r.error)throw r.error;return r.data.session})();return sessionPromise}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function kv(rows){return '<div class="kv">'+rows.filter(x=>x[1]!==null&&x[1]!==undefined&&x[1]!=='').map(([k,v])=>`<b>${esc(k)}</b><span>${esc(v)}</span>`).join('')+'</div>'}
+async function call(mode){const u=$('url').value.trim();if(!u){$('url').focus();throw new Error('Paste an Airbnb URL first.')}const s=await session();const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({url:u,mode})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||('Request failed '+r.status));return data}
+async function direct(){const btn=$('directBtn'),st=$('directStatus'),res=$('directResult'),img=$('directImg');btn.disabled=true;st.className='status';st.textContent='Fetching Airbnb HTML…';res.innerHTML='';img.style.display='none';try{const d=await call('direct');st.className='status '+(d.generic?'bad':'good');st.textContent=d.generic?'Only generic/uncertain listing data was found.':'A listing-specific candidate was found.';if(d.image){img.src=d.image;img.style.display='block'}res.innerHTML=kv([['Room ID',d.room_id],['Title',d.title],['HTTP',d.http_status],['HTML size',d.bytes+' bytes'],['Time',d.elapsed_ms+' ms']])+(d.title_candidates?.length?'<div class="chips">'+d.title_candidates.slice(0,12).map(x=>'<span class="chip">'+esc(x)+'</span>').join('')+'</div>':'')+`<details class="raw"><summary>Raw response</summary><pre>${esc(JSON.stringify(d,null,2))}</pre></details>`}catch(e){st.className='status bad';st.textContent=e.message}finally{btn.disabled=false}}
+async function rendered(){const btn=$('renderBtn'),st=$('renderStatus'),res=$('renderResult'),img=$('renderImg');btn.disabled=true;st.className='status';st.textContent='Opening Airbnb in a rendered browser, then asking Gemini…';res.innerHTML='';img.style.display='none';try{const d=await call('rendered');const g=d.gemini||{};st.className='status '+(g.page_state==='listing'?'good':g.page_state?'bad':'');st.textContent=g.page_state==='listing'?'Gemini saw an actual listing page.':('Rendered page state: '+(g.page_state||'unknown'));if(d.screenshot_url){img.src=d.screenshot_url;img.style.display='block'}res.innerHTML=kv([['Room ID',d.room_id],['Rendered title',d.rendered_title],['Gemini title',g.title],['Location',g.location],['Rating',g.rating],['Reviews',g.review_count],['Guests',g.guests],['Bedrooms',g.bedrooms],['Beds',g.beds],['Bathrooms',g.bathrooms],['Price',g.price_text],['Page state',g.page_state],['Confidence',g.confidence],['Time',d.elapsed_ms+' ms']])+`<details class="raw"><summary>Raw response</summary><pre>${esc(JSON.stringify(d,null,2))}</pre></details>`}catch(e){st.className='status bad';st.textContent=e.message}finally{btn.disabled=false}}
+$('directBtn').onclick=direct;$('renderBtn').onclick=rendered;$('both').onclick=async()=>{await Promise.allSettled([direct(),rendered()])};$('sample').onclick=()=>{$('url').value='https://www.airbnb.co.uk/rooms/1475883974002333304?unique_share_id=373a02bd-b2f0-488f-9348-aa73d056037a&viralityEntryPoint=1&s=76'};
+</script>
+</body>
+</html>
