@@ -17,7 +17,9 @@
     window.__holidaySupabaseLoading = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-      script.onload = () => window.supabase?.createClient ? resolve(window.supabase) : reject(new Error('Supabase library did not load'));
+      script.onload = () => window.supabase?.createClient
+        ? resolve(window.supabase)
+        : reject(new Error('Supabase library did not load'));
       script.onerror = () => reject(new Error('Could not load Supabase'));
       document.head.appendChild(script);
     });
@@ -32,6 +34,7 @@
       const { data: current, error: currentError } = await sb.auth.getSession();
       if (currentError) throw currentError;
       if (current?.session) return current.session;
+
       const { data, error } = await sb.auth.signInAnonymously();
       if (error) {
         const err = new Error(error.message || 'Anonymous sign-in is not enabled');
@@ -40,6 +43,7 @@
       }
       return data.session;
     })();
+
     try {
       return await sessionPromise;
     } catch (err) {
@@ -49,7 +53,9 @@
   }
 
   function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[ch]));
   }
 
   function setFound(html, kind = '') {
@@ -74,9 +80,10 @@
     style.id = 'holidayFlowStyles';
     style.textContent = `
       .hv-autofill-head{margin:2px 0 11px}
-      .hv-autofill-head b{font-size:13px;display:flex;align-items:center;gap:7px}
+      .hv-autofill-head b{font-size:13px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
       .hv-recommended{display:inline-flex;align-items:center;border-radius:999px;background:#fff0f3;color:#d91449;padding:4px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
       .hv-autofill-head p{margin:5px 0 0;color:#777;font-size:11px;line-height:1.4}
+
       .hv-manual-fallback{margin-top:14px;border:1px solid #e8e8e8;border-radius:16px;background:#fff;overflow:hidden}
       .hv-manual-fallback summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:12px;font-weight:850;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#444;-webkit-tap-highlight-color:transparent}
       .hv-manual-fallback summary::-webkit-details-marker{display:none}
@@ -93,8 +100,20 @@
       .hv-money{display:grid;grid-template-columns:92px 1fr;gap:8px}
       .hv-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding:11px 12px;background:#f7f7f7;border-radius:13px;font-size:12px;color:#666}
       .hv-summary strong{color:#222;font-size:15px;white-space:nowrap}
+
+      .hv-review{display:none;margin-top:16px;border:1px solid #e8e8e8;border-radius:20px;padding:15px;background:#fff}
+      .hv-review.show{display:block;animation:hvReveal .2s ease-out}
+      .hv-review-head{margin-bottom:4px}
+      .hv-review-head b{display:block;font-size:15px;letter-spacing:-.2px}
+      .hv-review-head span{display:block;color:#777;font-size:11px;line-height:1.4;margin-top:4px}
+      .hv-review .field{margin-top:12px}
+      .hv-review .field input[readonly]{background:#f7f7f7;color:#555}
+      .hv-review .primary{margin-top:16px}
+      @keyframes hvReveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
       .hv-link-ok{display:flex;align-items:center;gap:7px;color:#22543d;font-weight:750}
       .hv-link-ok:before{content:'✓';display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#dff5e8;font-size:11px}
+
       .steps .step:nth-child(2) .shotbox{min-height:102px;padding:12px;background:#fafafa}
       .steps .step:nth-child(2) .shotbox.has{background:#fff}
       .steps .step:nth-child(2) .shotthumb{width:62px;height:78px}
@@ -102,13 +121,15 @@
       .steps .step:nth-child(2) .ocrrow .mutednote{display:none}
       .steps .step:nth-child(2) .ocrrow .parse{width:100%;min-height:46px;background:linear-gradient(90deg,#ff385c,#e31c5f)}
       .steps .step:nth-child(2) .privacy{margin-top:8px}
+
       @media(max-width:390px){.hv-date-grid{grid-template-columns:1fr}.hv-money{grid-template-columns:84px 1fr}}
     `;
     document.head.appendChild(style);
   }
 
   function isAirbnbUrl(url = '') {
-    try { return /(^|\.)airbnb\./i.test(new URL(url).hostname); } catch { return false; }
+    try { return /(^|\.)airbnb\./i.test(new URL(url).hostname); }
+    catch { return false; }
   }
 
   function isGenericTitle(title = '') {
@@ -154,7 +175,26 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  function currencySymbol(code = 'GBP') { return moneySymbols[code] || `${code} `; }
+  function currencySymbol(code = 'GBP') {
+    return moneySymbols[code] || `${code} `;
+  }
+
+  function revealReview(source = 'gemini', scroll = true) {
+    const review = $('hvReview');
+    if (!review) return;
+    const note = $('hvReviewNote');
+    if (note) {
+      note.textContent = source === 'manual'
+        ? 'Check the details below, then edit anything you want before adding it to the board.'
+        : 'Gemini filled these from the screenshot. Check them before adding the option.';
+    }
+    review.classList.add('show');
+    if (scroll) setTimeout(() => review.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 180);
+  }
+
+  function hideReview() {
+    $('hvReview')?.classList.remove('show');
+  }
 
   function syncManualToLegacy() {
     const ci = $('hvCheckin')?.value || '';
@@ -167,7 +207,9 @@
     const total = numericPrice($('hvTotal')?.value || '');
     const currency = $('hvCurrency')?.value || 'GBP';
     const sym = currencySymbol(currency);
-    if ($('np')) $('np').value = total != null ? `${sym}${total.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})} total` : '';
+    if ($('np')) $('np').value = total != null
+      ? `${sym}${total.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})} total`
+      : '';
     const pp = total != null ? total / guests : null;
     if ($('npp')) $('npp').value = pp != null ? `${sym}${pp.toFixed(2)} pp` : '';
     if ($('hvPerPerson')) $('hvPerPerson').textContent = pp != null ? `${sym}${pp.toFixed(2)} pp` : '—';
@@ -184,7 +226,9 @@
     const gc = data.guests_count || parseInt((data.guests_text || '').match(/\d+/)?.[0] || '', 10);
     if (gc && $('hvGuests')) $('hvGuests').value = gc;
     if (typeof data.total_price === 'number' && $('hvTotal')) $('hvTotal').value = data.total_price.toFixed(2);
-    if (data.currency && $('hvCurrency') && ['GBP','EUR','USD'].includes(data.currency.toUpperCase())) $('hvCurrency').value = data.currency.toUpperCase();
+    if (data.currency && $('hvCurrency') && ['GBP','EUR','USD'].includes(data.currency.toUpperCase())) {
+      $('hvCurrency').value = data.currency.toUpperCase();
+    }
     syncManualToLegacy();
   }
 
@@ -192,8 +236,39 @@
     const details = $('hvManualFallback');
     if (details) {
       details.open = true;
+      revealReview('manual', false);
       setTimeout(() => details.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
     }
+  }
+
+  function buildReviewUI() {
+    if ($('hvReview')) return;
+    const steps = document.querySelector('.steps');
+    if (!steps) return;
+
+    const ids = ['type','nt','nd','ng','np','npp','nn'];
+    const fields = ids.map(id => $(id)?.closest('.field')).filter(Boolean);
+    if (!fields.length) return;
+
+    const review = document.createElement('div');
+    review.id = 'hvReview';
+    review.className = 'hv-review';
+    review.innerHTML = `
+      <div class="hv-review-head">
+        <b>Check the details</b>
+        <span id="hvReviewNote">Review the populated details before adding this option.</span>
+      </div>
+    `;
+    steps.insertAdjacentElement('afterend', review);
+
+    fields.forEach(field => {
+      field.style.display = '';
+      review.appendChild(field);
+    });
+
+    if ($('npp')) $('npp').readOnly = true;
+    const save = $('save');
+    if (save) review.appendChild(save);
   }
 
   function buildTripDetailsUI() {
@@ -246,13 +321,20 @@
     if (privacyNode) privacyNode.insertAdjacentElement('afterend', details);
     else steps[1].appendChild(details);
 
-    ['nd','ng','np','npp'].forEach(id => {
-      const el = $(id);
-      if (el?.closest('.field')) el.closest('.field').style.display = 'none';
+    ['hvCheckin','hvCheckout','hvGuests','hvTotal','hvCurrency'].forEach(id => {
+      $(id)?.addEventListener('input', () => {
+        syncManualToLegacy();
+        revealReview('manual', false);
+      });
+    });
+    $('hvCurrency')?.addEventListener('change', () => {
+      syncManualToLegacy();
+      revealReview('manual', false);
+    });
+    details.addEventListener('toggle', () => {
+      if (details.open) revealReview('manual', false);
     });
 
-    ['hvCheckin','hvCheckout','hvGuests','hvTotal','hvCurrency'].forEach(id => $(id)?.addEventListener('input', syncManualToLegacy));
-    $('hvCurrency')?.addEventListener('change', syncManualToLegacy);
     syncManualToLegacy();
   }
 
@@ -364,8 +446,12 @@
     if (typeof data.total_price === 'number') pieces.push(money(data.total_price, data.currency));
     if (typeof data.per_person_price === 'number') pieces.push(perPerson(data.per_person_price, data.currency));
     if (data.free_cancellation === true) pieces.push('Free cancellation');
-    const confidence = typeof data.confidence === 'number' ? ` <span style="color:#6b8d79">${Math.round(data.confidence*100)}% confidence</span>` : '';
+    const confidence = typeof data.confidence === 'number'
+      ? ` <span style="color:#6b8d79">${Math.round(data.confidence*100)}% confidence</span>`
+      : '';
     setFound(`<b>Filled from screenshot</b>${confidence}<br>${pieces.length ? pieces.map(escapeHtml).join(' · ') : 'Screenshot read — check the details before adding.'}`);
+
+    revealReview('gemini', true);
   }
 
   async function parseWithGemini() {
@@ -373,6 +459,7 @@
     const button = $('ocrBtn');
     const file = input?.files?.[0];
     if (!file || reading) return;
+
     reading = true;
     if (button) { button.disabled = true; button.textContent = 'Reading with Gemini…'; }
     setFound('<b>Reading booking screenshot…</b><br>Gemini 3.1 Flash-Lite normally takes a couple of seconds.');
@@ -385,7 +472,10 @@
       body.append('image', file, file.name || 'booking-screenshot.png');
       const response = await fetch(SCREENSHOT_FUNCTION_URL, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'apikey': SUPABASE_KEY },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': SUPABASE_KEY
+        },
         body
       });
       setProgress(82, true);
@@ -417,12 +507,15 @@
     if ($('hvCurrency')) $('hvCurrency').value = 'GBP';
     if ($('hvPerPerson')) $('hvPerPerson').textContent = '—';
     if ($('hvManualFallback')) $('hvManualFallback').open = false;
+    hideReview();
     syncManualToLegacy();
   }
 
   function bind() {
     injectStyles();
     buildTripDetailsUI();
+    buildReviewUI();
+    hideReview();
 
     const parseButton = $('parseBtn');
     if (parseButton) parseButton.onclick = tidyFetchPreview;
@@ -438,10 +531,14 @@
     const button = $('ocrBtn');
     if (input && button && input.dataset.geminiBound !== '1') {
       input.dataset.geminiBound = '1';
-      button.onclick = (event) => { event.preventDefault(); parseWithGemini(); };
+      button.onclick = (event) => {
+        event.preventDefault();
+        parseWithGemini();
+      };
       button.textContent = 'Autofill from screenshot';
       input.addEventListener('change', () => {
         if (!input.files?.[0]) return;
+        hideReview();
         setFound('<b>Screenshot selected.</b><br>Reading the booking details with Gemini…');
         setTimeout(parseWithGemini, 120);
       });
@@ -452,6 +549,9 @@
     }, 80));
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, { once: true });
-  else bind();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
+  } else {
+    bind();
+  }
 })();
