@@ -29,10 +29,14 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text()
-          tag = '<script src="./ui-polish.js"></script>'
-          if tag not in s:
-              s = s.replace('</body>', tag + '\n</body>')
-              p.write_text(s)
+          tags = [
+              '<script src="./ui-polish.js"></script>',
+              '<script src="./people-page.js"></script>',
+          ]
+          for tag in tags:
+              if tag not in s:
+                  s = s.replace('</body>', tag + '\n</body>')
+          p.write_text(s)
           PY
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
