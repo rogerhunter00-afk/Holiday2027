@@ -73,24 +73,34 @@
     const style = document.createElement('style');
     style.id = 'holidayFlowStyles';
     style.textContent = `
-      .hv-manual{margin:4px 0 16px;padding:15px;border:1px solid #e8e8e8;border-radius:18px;background:#fff}
+      .hv-autofill-head{margin:2px 0 11px}
+      .hv-autofill-head b{font-size:13px;display:flex;align-items:center;gap:7px}
+      .hv-recommended{display:inline-flex;align-items:center;border-radius:999px;background:#fff0f3;color:#d91449;padding:4px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+      .hv-autofill-head p{margin:5px 0 0;color:#777;font-size:11px;line-height:1.4}
+      .hv-manual-fallback{margin-top:14px;border:1px solid #e8e8e8;border-radius:16px;background:#fff;overflow:hidden}
+      .hv-manual-fallback summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:12px;font-weight:850;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#444;-webkit-tap-highlight-color:transparent}
+      .hv-manual-fallback summary::-webkit-details-marker{display:none}
+      .hv-manual-fallback summary:after{content:'▾';color:#999;font-size:13px;transition:transform .16s}
+      .hv-manual-fallback[open] summary:after{transform:rotate(180deg)}
+      .hv-manual-fallback[open] summary{border-bottom:1px solid #eee}
+      .hv-manual{padding:14px;background:#fff}
       .hv-manual-title{font-size:13px;font-weight:850;margin:0 0 3px}
       .hv-manual-sub{font-size:11px;color:#888;line-height:1.35;margin:0 0 13px}
       .hv-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
       .hv-field{margin-top:10px}.hv-field:first-child{margin-top:0}
       .hv-field label{display:block;font-size:11px;font-weight:800;margin-bottom:6px;color:#555}
-      .hv-field input,.hv-field select{width:100%;border:1px solid #d8d8d8;border-radius:13px;padding:12px 12px;background:#fff;color:#222;outline:none;min-height:46px}
+      .hv-field input,.hv-field select{width:100%;border:1px solid #d8d8d8;border-radius:13px;padding:12px;background:#fff;color:#222;outline:none;min-height:46px}
       .hv-money{display:grid;grid-template-columns:92px 1fr;gap:8px}
       .hv-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding:11px 12px;background:#f7f7f7;border-radius:13px;font-size:12px;color:#666}
       .hv-summary strong{color:#222;font-size:15px;white-space:nowrap}
-      .hv-divider{display:flex;align-items:center;gap:10px;margin:15px 0 11px;color:#999;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
-      .hv-divider:before,.hv-divider:after{content:'';height:1px;background:#e8e8e8;flex:1}
-      .hv-autofill-note{font-size:11px;color:#888;line-height:1.4;margin:8px 0 0}
       .hv-link-ok{display:flex;align-items:center;gap:7px;color:#22543d;font-weight:750}
       .hv-link-ok:before{content:'✓';display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#dff5e8;font-size:11px}
-      .steps .step:nth-child(2) .shotbox{min-height:88px;padding:11px}.steps .step:nth-child(2) .shotthumb{width:58px;height:72px}
-      .steps .step:nth-child(2) .ocrrow{grid-template-columns:1fr}.steps .step:nth-child(2) .ocrrow .mutednote{display:none}
-      .steps .step:nth-child(2) .ocrrow .parse{width:100%;min-height:45px}
+      .steps .step:nth-child(2) .shotbox{min-height:102px;padding:12px;background:#fafafa}
+      .steps .step:nth-child(2) .shotbox.has{background:#fff}
+      .steps .step:nth-child(2) .shotthumb{width:62px;height:78px}
+      .steps .step:nth-child(2) .ocrrow{grid-template-columns:1fr;margin-top:9px}
+      .steps .step:nth-child(2) .ocrrow .mutednote{display:none}
+      .steps .step:nth-child(2) .ocrrow .parse{width:100%;min-height:46px;background:linear-gradient(90deg,#ff385c,#e31c5f)}
       .steps .step:nth-child(2) .privacy{margin-top:8px}
       @media(max-width:390px){.hv-date-grid{grid-template-columns:1fr}.hv-money{grid-template-columns:84px 1fr}}
     `;
@@ -149,7 +159,7 @@
   function syncManualToLegacy() {
     const ci = $('hvCheckin')?.value || '';
     const co = $('hvCheckout')?.value || '';
-    if ($('nd') && ci && co) $('nd').value = prettyDateRange(ci, co);
+    if ($('nd')) $('nd').value = ci && co ? prettyDateRange(ci, co) : '';
 
     const guests = Math.max(1, parseInt($('hvGuests')?.value || '1', 10) || 1);
     if ($('ng')) $('ng').value = `${guests} ${guests === 1 ? 'adult' : 'adults'}`;
@@ -178,47 +188,63 @@
     syncManualToLegacy();
   }
 
-  function buildManualUI() {
+  function openManualFallback() {
+    const details = $('hvManualFallback');
+    if (details) {
+      details.open = true;
+      setTimeout(() => details.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
+  }
+
+  function buildTripDetailsUI() {
     const steps = document.querySelectorAll('.steps .step');
-    if (steps.length < 2 || $('hvManual')) return;
+    if (steps.length < 2 || $('hvManualFallback')) return;
 
     const intro = document.querySelector('.sheet > p');
-    if (intro) intro.textContent = 'Paste a travel link and we’ll pull in the useful listing details. Add the trip dates and price manually, or let Gemini fill them from a screenshot.';
+    if (intro) intro.textContent = 'Paste a travel link and we’ll pull in the useful listing details. For dates and price, upload the booking summary or use the manual backup.';
 
     const h1 = steps[0].querySelector('.stephead');
-    if (h1) h1.innerHTML = '<span class="stepnum">1</span><div><b>Paste the link</b><span>For Airbnb we now pull the real listing title, photo and property details directly.</span></div>';
+    if (h1) h1.innerHTML = '<span class="stepnum">1</span><div><b>Paste the link</b><span>For Airbnb we pull the real listing title, photo and property details directly.</span></div>';
 
     const h2 = steps[1].querySelector('.stephead');
-    if (h2) h2.innerHTML = '<span class="stepnum">2</span><div><b>Add dates and price</b><span>Enter them here, or upload the booking summary and Gemini will fill them for you.</span></div>';
-
-    const manual = document.createElement('div');
-    manual.id = 'hvManual';
-    manual.className = 'hv-manual';
-    manual.innerHTML = `
-      <div class="hv-manual-title">Trip details</div>
-      <p class="hv-manual-sub">This is the quickest reliable way to compare options. You can still overwrite it with a screenshot below.</p>
-      <div class="hv-date-grid">
-        <div class="hv-field"><label for="hvCheckin">Check-in</label><input id="hvCheckin" type="date"></div>
-        <div class="hv-field"><label for="hvCheckout">Check-out</label><input id="hvCheckout" type="date"></div>
-      </div>
-      <div class="hv-field"><label for="hvGuests">Guests</label><input id="hvGuests" type="number" min="1" max="30" value="1" inputmode="numeric"></div>
-      <div class="hv-field"><label for="hvTotal">Total price</label><div class="hv-money"><select id="hvCurrency"><option value="GBP">£ GBP</option><option value="EUR">€ EUR</option><option value="USD">$ USD</option></select><input id="hvTotal" type="text" inputmode="decimal" placeholder="e.g. 2227.50"></div></div>
-      <div class="hv-summary"><span>Approx. per person</span><strong id="hvPerPerson">—</strong></div>
-    `;
+    if (h2) h2.innerHTML = '<span class="stepnum">2</span><div><b>Add dates and price</b><span>Upload the booking summary and Gemini will fill these for you. Manual entry is available as a backup.</span></div>';
 
     const shotBox = $('shotBox');
-    steps[1].insertBefore(manual, shotBox);
-    const divider = document.createElement('div');
-    divider.className = 'hv-divider';
-    divider.textContent = 'or autofill';
-    steps[1].insertBefore(divider, shotBox);
+    if (!shotBox) return;
 
-    if ($('shotName')) $('shotName').textContent = 'Upload booking screenshot';
+    const autofillHead = document.createElement('div');
+    autofillHead.className = 'hv-autofill-head';
+    autofillHead.innerHTML = '<b>Upload booking screenshot <span class="hv-recommended">Recommended</span></b><p>Gemini 3.1 Flash-Lite reads the dates, guests, total price, cancellation terms and rating.</p>';
+    steps[1].insertBefore(autofillHead, shotBox);
+
+    if ($('shotName')) $('shotName').textContent = 'Choose booking screenshot';
     const shotCopy = steps[1].querySelector('.shotcopy span');
-    if (shotCopy) shotCopy.textContent = 'Gemini 3.1 Flash-Lite can read dates, guests, total price and cancellation details.';
+    if (shotCopy) shotCopy.textContent = 'Pick it from Photos. The booking-summary section is enough.';
     if ($('ocrBtn')) $('ocrBtn').textContent = 'Autofill from screenshot';
     const privacy = steps[1].querySelector('.privacy');
-    if (privacy) privacy.textContent = 'Screenshot analysis is handled securely through Supabase and Google Gemini. Avoid screenshots containing card or payment details.';
+    if (privacy) privacy.textContent = 'Sent securely through Supabase to Google Gemini for analysis. Avoid screenshots containing card or payment details.';
+
+    const details = document.createElement('details');
+    details.id = 'hvManualFallback';
+    details.className = 'hv-manual-fallback';
+    details.innerHTML = `
+      <summary>Enter manually instead</summary>
+      <div class="hv-manual" id="hvManual">
+        <div class="hv-manual-title">Trip details</div>
+        <p class="hv-manual-sub">Use this if you do not have a screenshot, or if Gemini misses anything.</p>
+        <div class="hv-date-grid">
+          <div class="hv-field"><label for="hvCheckin">Check-in</label><input id="hvCheckin" type="date"></div>
+          <div class="hv-field"><label for="hvCheckout">Check-out</label><input id="hvCheckout" type="date"></div>
+        </div>
+        <div class="hv-field"><label for="hvGuests">Guests</label><input id="hvGuests" type="number" min="1" max="30" value="1" inputmode="numeric"></div>
+        <div class="hv-field"><label for="hvTotal">Total price</label><div class="hv-money"><select id="hvCurrency"><option value="GBP">£ GBP</option><option value="EUR">€ EUR</option><option value="USD">$ USD</option></select><input id="hvTotal" type="text" inputmode="decimal" placeholder="e.g. 2227.50"></div></div>
+        <div class="hv-summary"><span>Approx. per person</span><strong id="hvPerPerson">—</strong></div>
+      </div>
+    `;
+
+    const privacyNode = steps[1].querySelector('.privacy');
+    if (privacyNode) privacyNode.insertAdjacentElement('afterend', details);
+    else steps[1].appendChild(details);
 
     ['nd','ng','np','npp'].forEach(id => {
       const el = $(id);
@@ -278,11 +304,10 @@
       }
       $('linkPreview')?.classList.add('show');
 
-      // Reuse the main page's draft variables so the saved card gets the real property image.
       try { draftImage = image; draftSource = 'Airbnb'; } catch (_) {}
 
       if (typeof setStatus === 'function') {
-        setStatus(`Airbnb listing found in ${d.elapsed_ms || 'under a second'}${typeof d.elapsed_ms === 'number' ? ' ms' : ''}. Add dates and price below.`, 'ok');
+        setStatus('Airbnb listing found.', 'ok');
         const status = $('status');
         if (status) status.innerHTML = `<span class="hv-link-ok">Listing found</span><div style="margin-top:5px;color:#47705a">Real Airbnb title and property photo loaded${d.elapsed_ms ? ` in ${d.elapsed_ms} ms` : ''}.</div>`;
       }
@@ -296,8 +321,7 @@
   function money(value, currency) {
     if (typeof value !== 'number') return '';
     const code = (currency || 'GBP').toUpperCase();
-    const sym = currencySymbol(code);
-    return `${sym}${value.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})} total`;
+    return `${currencySymbol(code)}${value.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})} total`;
   }
 
   function perPerson(value, currency) {
@@ -341,7 +365,7 @@
     if (typeof data.per_person_price === 'number') pieces.push(perPerson(data.per_person_price, data.currency));
     if (data.free_cancellation === true) pieces.push('Free cancellation');
     const confidence = typeof data.confidence === 'number' ? ` <span style="color:#6b8d79">${Math.round(data.confidence*100)}% confidence</span>` : '';
-    setFound(`<b>Filled from screenshot</b>${confidence}<br>${pieces.length ? pieces.map(escapeHtml).join(' · ') : 'Screenshot read — check the fields above.'}`);
+    setFound(`<b>Filled from screenshot</b>${confidence}<br>${pieces.length ? pieces.map(escapeHtml).join(' · ') : 'Screenshot read — check the details before adding.'}`);
   }
 
   async function parseWithGemini() {
@@ -374,8 +398,9 @@
       if (err?.code === 'ANON_AUTH_DISABLED' || /anonymous.*disabled|anonymous sign-ins/i.test(message)) {
         setFound('<b>Anonymous sign-in is disabled.</b><br>Enable it in Supabase Authentication settings and try again.', 'error');
       } else {
-        setFound(`<b>Gemini could not read this screenshot.</b><br>${escapeHtml(message)}`, 'error');
+        setFound(`<b>Gemini could not read this screenshot.</b><br>${escapeHtml(message)}<br><span style="display:inline-block;margin-top:5px">The manual backup has been opened below.</span>`, 'error');
       }
+      openManualFallback();
       setProgress(0, false);
     } finally {
       reading = false;
@@ -384,14 +409,29 @@
     }
   }
 
+  function resetV2Fields() {
+    if ($('hvCheckin')) $('hvCheckin').value = '';
+    if ($('hvCheckout')) $('hvCheckout').value = '';
+    if ($('hvGuests')) $('hvGuests').value = '1';
+    if ($('hvTotal')) $('hvTotal').value = '';
+    if ($('hvCurrency')) $('hvCurrency').value = 'GBP';
+    if ($('hvPerPerson')) $('hvPerPerson').textContent = '—';
+    if ($('hvManualFallback')) $('hvManualFallback').open = false;
+    syncManualToLegacy();
+  }
+
   function bind() {
     injectStyles();
-    buildManualUI();
+    buildTripDetailsUI();
 
     const parseButton = $('parseBtn');
     if (parseButton) parseButton.onclick = tidyFetchPreview;
     $('link')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); tidyFetchPreview(e); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        tidyFetchPreview(e);
+      }
     }, true);
 
     const input = $('screenshot');
@@ -407,31 +447,8 @@
       });
     }
 
-    // Keep the manual controls correct after the original page resets its hidden fields.
-    const originalReset = typeof resetForm === 'function' ? resetForm : null;
-    if (originalReset && !window.__holidayResetWrapped) {
-      window.__holidayResetWrapped = true;
-      window.resetHolidayFlowV2 = () => {
-        originalReset();
-        if ($('hvCheckin')) $('hvCheckin').value = '';
-        if ($('hvCheckout')) $('hvCheckout').value = '';
-        if ($('hvGuests')) $('hvGuests').value = '1';
-        if ($('hvTotal')) $('hvTotal').value = '';
-        if ($('hvCurrency')) $('hvCurrency').value = 'GBP';
-        syncManualToLegacy();
-      };
-    }
-
-    // The old resetForm is called lexically by the existing save handler, so also watch modal close and clear V2 controls when a save completes.
     $('save')?.addEventListener('click', () => setTimeout(() => {
-      if (!$('modal')?.classList.contains('open')) {
-        if ($('hvCheckin')) $('hvCheckin').value = '';
-        if ($('hvCheckout')) $('hvCheckout').value = '';
-        if ($('hvGuests')) $('hvGuests').value = '1';
-        if ($('hvTotal')) $('hvTotal').value = '';
-        if ($('hvCurrency')) $('hvCurrency').value = 'GBP';
-        if ($('hvPerPerson')) $('hvPerPerson').textContent = '—';
-      }
+      if (!$('modal')?.classList.contains('open')) resetV2Fields();
     }, 80));
   }
 
