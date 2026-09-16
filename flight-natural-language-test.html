@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Flight request tester</title>
+<style>
+:root{--ink:#222;--muted:#717171;--line:#e8e8e8;--soft:#f7f7f7;--pink:#ff385c;--green:#effaf4;--greenInk:#22543d}
+*{box-sizing:border-box}html,body{margin:0;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}button,textarea{font:inherit}
+body{min-height:100vh;background:linear-gradient(180deg,#fff,#fafafa)}
+.app{max-width:720px;margin:0 auto;padding:calc(22px + env(safe-area-inset-top)) 18px calc(50px + env(safe-area-inset-bottom))}
+.eyebrow{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--pink)}
+h1{font-size:34px;line-height:1.02;letter-spacing:-1.4px;margin:8px 0 10px}.intro{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:18px;box-shadow:0 10px 30px #00000008;margin-bottom:16px}
+label{display:block;font-size:13px;font-weight:850;margin-bottom:8px}.prompt{width:100%;min-height:155px;border:1px solid #d9d9d9;border-radius:18px;padding:16px;resize:vertical;outline:none;font-size:17px;line-height:1.45;background:#fff}.prompt:focus{border-color:#aaa;box-shadow:0 0 0 4px #00000008}
+.examples{display:flex;gap:8px;overflow:auto;padding:10px 0 2px;scrollbar-width:none}.examples::-webkit-scrollbar{display:none}.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800}
+.primary{width:100%;border:0;border-radius:16px;padding:15px 18px;background:#222;color:#fff;font-weight:900;margin-top:14px}.primary[disabled]{opacity:.55}.subtle{margin-top:10px;font-size:12px;color:#999;line-height:1.45}
+.loading{display:none;margin-top:14px;padding:13px 14px;border-radius:16px;background:#f7f7f7;font-size:13px;color:#555}.loading.show{display:block}
+.result{display:none}.result.show{display:block}.summary{background:var(--green);color:var(--greenInk);border-radius:18px;padding:15px;line-height:1.45;font-size:14px}.summary b{display:block;margin-bottom:4px}
+.sectionTitle{font-size:17px;margin:20px 0 10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kv{border:1px solid var(--line);border-radius:16px;padding:12px;min-width:0}.kv span{display:block;color:#888;font-size:11px;margin-bottom:5px}.kv b{font-size:14px;line-height:1.35;word-break:break-word}
+.tags{display:flex;gap:7px;flex-wrap:wrap}.tag{background:#f4f4f4;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:750}.tag.hot{background:#fff0f3;color:#c2183f}.tag.good{background:#edf9f1;color:#23613f}
+.missing{margin-top:12px;padding:12px;border-radius:15px;background:#fff8e7;color:#755700;font-size:13px}.missing:empty{display:none}
+details{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}summary{cursor:pointer;font-size:13px;font-weight:800;color:#555}pre{overflow:auto;background:#111;color:#f5f5f5;border-radius:16px;padding:14px;font-size:11px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.apiBox{margin-top:12px;padding:13px;border-radius:16px;background:#f7f7f7}.apiBox b{font-size:13px}.apiBox code{display:block;margin-top:8px;font-size:11px;line-height:1.5;word-break:break-all;color:#555}.pill{display:inline-block;margin-top:9px;border-radius:999px;background:#eee;padding:6px 9px;font-size:11px;font-weight:800;color:#666}.err{display:none;margin-top:12px;border-radius:15px;background:#fff3f3;color:#9b2c2c;padding:12px;font-size:13px;line-height:1.4}.err.show{display:block}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.app{padding-left:14px;padding-right:14px}h1{font-size:31px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="eyebrow">Holiday2027 · Flight prototype</div>
+  <h1>Describe the flight normally.</h1>
+  <p class="intro">This test checks whether Gemini 3.1 Flash-Lite can turn a casual sentence into a clean flight-search request before we connect the live flight API.</p>
+
+  <section class="card">
+    <label for="q">What are you looking for?</label>
+    <textarea id="q" class="prompt" placeholder="e.g. Find return flights to Malta from any Scottish airport leaving between 3 and 10 May 2027 for about a week, ideally early flights, under £100 per person."></textarea>
+    <div class="examples">
+      <button class="chip" data-example="Find return flights to Malta from any Scottish airport leaving between 3 and 10 May 2027 for 7 nights, ideally early morning flights, under £100 per person.">Malta · flexible</button>
+      <button class="chip" data-example="One way to Faro from Glasgow or Edinburgh on 12 May 2027, direct only, before 10am, max £80.">Faro · one way</button>
+      <button class="chip" data-example="Flights to Mallorca from anywhere in Scotland sometime between 15 and 22 May 2027, 5 to 7 nights, cheapest options first, under £120 each.">Mallorca · flexible</button>
+    </div>
+    <button id="go" class="primary">Understand my request</button>
+    <div class="subtle">The model does not search prices yet on this page. It creates the exact structured search we can send to Google Flights/SerpApi next.</div>
+    <div id="loading" class="loading">Reading your request with Gemini 3.1 Flash-Lite…</div>
+    <div id="error" class="err"></div>
+  </section>
+
+  <section id="result" class="card result">
+    <div class="summary"><b>What Gemini thinks you mean</b><span id="interpretation"></span></div>
+
+    <h2 class="sectionTitle">Search details</h2>
+    <div class="grid">
+      <div class="kv"><span>Leaving from</span><b id="origins">—</b></div>
+      <div class="kv"><span>Destination</span><b id="destination">—</b></div>
+      <div class="kv"><span>Departure window</span><b id="departDates">—</b></div>
+      <div class="kv"><span>Return / trip length</span><b id="returnDates">—</b></div>
+      <div class="kv"><span>Passengers</span><b id="passengers">—</b></div>
+      <div class="kv"><span>Budget</span><b id="budget">—</b></div>
+    </div>
+
+    <h2 class="sectionTitle">Preferences</h2>
+    <div id="prefs" class="tags"></div>
+    <div id="missing" class="missing"></div>
+
+    <h2 class="sectionTitle">Next API request</h2>
+    <div class="apiBox">
+      <b id="engine">—</b>
+      <span class="pill" id="why">—</span>
+      <code id="params"></code>
+    </div>
+
+    <details>
+      <summary>Raw JSON</summary>
+      <pre id="raw"></pre>
+    </details>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://bpqmcjbnaukbejznzqwr.supabase.co';
+const SUPABASE_KEY='sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
+const FUNCTION_URL=SUPABASE_URL+'/functions/v1/parse-flight-request';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let sessionPromise=null;
+
+async function session(){
+  if(sessionPromise)return sessionPromise;
+  sessionPromise=(async()=>{
+    const {data:cur}=await sb.auth.getSession();
+    if(cur?.session)return cur.session;
+    const {data,error}=await sb.auth.signInAnonymously();
+    if(error)throw error;
+    return data.session;
+  })();
+  try{return await sessionPromise}catch(e){sessionPromise=null;throw e}
+}
+function showDateRange(a,b){
+  if(!a&&!b)return 'Not specified';
+  if(a===b)return a;
+  return [a,b].filter(Boolean).join(' → ');
+}
+function money(i){
+  if(typeof i.max_price!=='number')return 'No maximum given';
+  const symbol=i.currency==='GBP'?'£':i.currency==='EUR'?'€':i.currency==='USD'?'$':i.currency+' ';
+  return `${symbol}${i.max_price} ${i.price_basis==='total'?'total':'per person'}`;
+}
+function render(data){
+  const i=data.intent||{};
+  $('interpretation').textContent=i.interpretation||'Parsed successfully.';
+  $('origins').textContent=(i.departure_airports||[]).join(', ')||i.departure_scope||'Not specified';
+  $('destination').textContent=i.destination_text ? `${i.destination_text}${(i.arrival_airports||[]).length?' · '+i.arrival_airports.join(', '):''}` : 'Not specified';
+  $('departDates').textContent=showDateRange(i.outbound_date_start,i.outbound_date_end);
+  let r=showDateRange(i.return_date_start,i.return_date_end);
+  if(i.trip_length_days_min||i.trip_length_days_max){
+    const a=i.trip_length_days_min||i.trip_length_days_max,b=i.trip_length_days_max||i.trip_length_days_min;
+    r=(a===b?`${a} nights`:`${a}–${b} nights`);
+  }
+  $('returnDates').textContent=r;
+  $('passengers').textContent=`${i.adults||1} adult${(i.adults||1)===1?'':'s'}${i.children?` · ${i.children} child${i.children===1?'':'ren'}`:''}${i.adults_explicit?'':' · assumed'}`;
+  $('budget').textContent=money(i);
+  const prefs=[];
+  if(i.time_preference&&i.time_preference!=='any')prefs.push([i.time_preference+' flights','hot']);
+  if(i.stops==='nonstop')prefs.push(['direct only','good']); else if(i.stops==='one_or_less')prefs.push(['max 1 stop','good']);
+  prefs.push([i.sort_priority==='price'?'cheapest first':i.sort_priority==='departure_time'?'earliest first':'balanced','']);
+  prefs.push([i.trip_type||'trip type unspecified','']);
+  $('prefs').innerHTML=prefs.map(([t,c])=>`<span class="tag ${c}">${t}</span>`).join('');
+  const missing=i.missing_fields||[];
+  $('missing').textContent=missing.length?'Still needed before a precise live search: '+missing.join(', '):'';
+  $('engine').textContent=data.serpapi_plan?.engine||'—';
+  $('why').textContent=data.serpapi_plan?.reason||'—';
+  const p=data.serpapi_plan?.params||{};
+  $('params').textContent=Object.entries(p).map(([k,v])=>`${k}=${v}`).join('&');
+  $('raw').textContent=JSON.stringify(data,null,2);
+  $('result').classList.add('show');
+}
+
+async function run(){
+  const q=$('q').value.trim();
+  if(q.length<8){$('q').focus();return}
+  $('go').disabled=true;$('go').textContent='Reading…';$('loading').classList.add('show');$('error').classList.remove('show');$('result').classList.remove('show');
+  try{
+    const s=await session();
+    const r=await fetch(FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({query:q})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||`Request failed (${r.status})`);
+    render(data);
+  }catch(e){$('error').textContent=e.message||String(e);$('error').classList.add('show')}
+  finally{$('go').disabled=false;$('go').textContent='Understand my request';$('loading').classList.remove('show')}
+}
+$('go').onclick=run;
+$('q').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')run()});
+document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{$('q').value=b.dataset.example;run()});
+</script>
+</body>
+</html>
