@@ -32,6 +32,7 @@ jobs:
           tags = [
               '<script src="./ui-polish.js"></script>',
               '<script src="./people-page.js"></script>',
+              '<script src="./app-shell.js"></script>',
           ]
           for tag in tags:
               if tag not in s:
