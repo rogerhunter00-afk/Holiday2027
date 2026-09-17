@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Booking image diagnostic</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#fff;color:#222}.wrap{max-width:760px;margin:auto;padding:28px 20px 80px}h1{font-size:34px;letter-spacing:-1.2px;margin:4px 0 8px}.sub{color:#777;line-height:1.45;margin:0 0 22px}.card{border:1px solid #e8e8e8;border-radius:22px;padding:16px;margin-top:14px}.field{margin-top:12px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.field input{width:100%;box-sizing:border-box;border:1px solid #d8d8d8;border-radius:14px;padding:13px 14px;font-size:16px}.go{width:100%;border:0;border-radius:14px;background:linear-gradient(90deg,#ff385c,#e31c5f);color:#fff;font-weight:850;padding:14px 16px;margin-top:13px;font-size:16px}.go[disabled]{opacity:.55}.status{margin-top:12px;padding:12px 13px;border-radius:14px;background:#f7f7f7;color:#555;line-height:1.45;font-size:13px}.status.ok{background:#effaf4;color:#22543d}.status.err{background:#fff3f3;color:#9b2c2c}.img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:18px;background:#f1f1f1;display:none;margin-top:14px}.kv{display:grid;grid-template-columns:120px 1fr;gap:7px 10px;margin-top:14px;font-size:13px}.kv b{color:#777}.raw{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:#f7f7f7;border-radius:14px;padding:12px;margin-top:14px}.eyebrow{color:#e31c5f;font-weight:900;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+</style>
+</head>
+<body><main class="wrap">
+<div class="eyebrow">Holiday 2027 · diagnostic</div>
+<h1>Booking.com image test</h1>
+<p class="sub">This calls the exact same parser used by the main site, but shows the returned image and fallback flags directly so we can tell whether the failure is in the parser or the card UI.</p>
+<div class="card">
+  <div class="field"><label>Booking.com share link</label><input id="url" value="https://www.booking.com/Share-7Lh3uu" autocomplete="off"></div>
+  <button id="go" class="go">Run image test</button>
+  <div id="status" class="status">Ready.</div>
+  <img id="img" class="img" alt="Returned property image">
+  <div id="kv" class="kv" hidden></div>
+  <div id="raw" class="raw" hidden></div>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://bpqmcjbnaukbejznzqwr.supabase.co';
+const SUPABASE_KEY='sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
+const FUNCTION_URL=SUPABASE_URL+'/functions/v1/parse-travel-url';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+async function session(){
+  const cur=await sb.auth.getSession(); if(cur.data?.session)return cur.data.session;
+  const x=await sb.auth.signInAnonymously(); if(x.error)throw x.error; return x.data.session;
+}
+$('go').onclick=async()=>{
+  const btn=$('go'), url=$('url').value.trim(); btn.disabled=true; btn.textContent='Testing…'; $('status').className='status'; $('status').textContent='Calling parser…'; $('img').style.display='none'; $('kv').hidden=true; $('raw').hidden=true;
+  try{
+    const s=await session();
+    const r=await fetch(FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({url})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    $('status').className='status '+(d.image?'ok':'err');
+    $('status').textContent=d.image?'Parser returned an image URL. If the main card is still blank, the problem is in saving/rendering the image.':'Parser returned NO image. The problem is still in the Booking.com extraction/fallback chain.';
+    if(d.image){$('img').src=d.image;$('img').style.display='block';$('img').onerror=()=>{$('status').className='status err';$('status').textContent='Parser returned an image URL, but Safari could not load that URL.';};}
+    const vals=[['Title',d.title],['Provider',d.provider],['Final URL',d.final_url],['Image URL',d.image||'—'],['Used metadata fallback',String(!!d.used_fallback)],['Used rendered-image fallback',String(!!d.image_fallback_used)],['Share link detected',String(!!d.share_link)],['HTTP status',d.http_status??'—'],['Elapsed',d.elapsed_ms?d.elapsed_ms+' ms':'—']];
+    $('kv').innerHTML=vals.map(([a,b])=>'<b>'+esc(a)+'</b><span>'+esc(b)+'</span>').join(''); $('kv').hidden=false;
+    $('raw').textContent=JSON.stringify(d,null,2); $('raw').hidden=false;
+  }catch(e){$('status').className='status err';$('status').textContent='Test failed: '+(e?.message||e);}
+  finally{btn.disabled=false;btn.textContent='Run image test';}
+};
+</script></body></html>
