@@ -42,6 +42,7 @@ jobs:
               '<script src="./ui-polish.js"></script>',
               '<script src="./people-page.js"></script>',
               '<script src="./app-shell.js"></script>',
+              '<script src="./flights-main.js"></script>',
           ])
 
           inject('flight-natural-language-test.html', [
