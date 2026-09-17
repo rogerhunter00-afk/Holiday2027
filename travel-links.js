@@ -5,6 +5,7 @@
 
   let client = null;
   let sessionPromise = null;
+  let repairing = false;
   const $ = (id) => document.getElementById(id);
 
   const supported = [
@@ -21,6 +22,10 @@
 
   function isAirbnb(url) {
     try { return /(^|\.)airbnb\./i.test(new URL(url).hostname); }
+    catch { return false; }
+  }
+  function isBooking(url) {
+    try { return /(^|\.)booking\.com$/i.test(new URL(url).hostname); }
     catch { return false; }
   }
   function isSupported(url) {
@@ -95,7 +100,6 @@
     }
     $('linkPreview')?.classList.add('show');
 
-    // Keep the listing description useful, but do not trust page-level "from" prices as the trip total.
     if ($('nn') && description && !$('nn').value.trim()) $('nn').value = description.slice(0, 320);
     try { draftImage = image; draftSource = provider; } catch {}
   }
@@ -133,7 +137,8 @@
       setLinkStatus(`${data.provider || 'Travel'} listing found${fallbackText}. Upload the booking summary next for the exact dates and total price.`, 'ok');
       const status = $('status');
       if (status) {
-        status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Title${data.image ? ', photo' : ''}${data.location ? ' and location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
+        const imageNote = data.image ? 'photo' : 'listing details';
+        status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Title and ${imageNote}${data.location ? ', plus location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
       }
     } catch (err) {
       setLinkStatus(`Could not automatically read this link. You can still add it manually below. ${err?.message || err}`, 'err');
@@ -141,6 +146,38 @@
       if (button) { button.disabled = false; button.textContent = 'Fetch'; }
     }
     return true;
+  }
+
+  async function repairMissingImages() {
+    if (repairing) return;
+    let all;
+    try { all = typeof options !== 'undefined' ? options : JSON.parse(localStorage.getItem('holiday2027-options-v2') || '[]'); }
+    catch { return; }
+    const targets = (Array.isArray(all) ? all : []).filter(o => o?.type === 'stay' && !o?.image && o?.url && isBooking(o.url)).slice(0, 3);
+    if (!targets.length) return;
+    repairing = true;
+    let changed = false;
+    try {
+      for (const o of targets) {
+        try {
+          const data = await parseTravelLink(o.url);
+          if (data?.image) {
+            o.image = data.image;
+            if ((!o.title || /^Booking\.com$/i.test(o.title)) && data.title) o.title = data.title;
+            if (data.provider) o.source = data.provider;
+            changed = true;
+          }
+        } catch {}
+      }
+      if (changed) {
+        localStorage.setItem('holiday2027-options-v2', JSON.stringify(all));
+        try { options = all; } catch {}
+        try { if (typeof render === 'function') render(); } catch {}
+        try { if (typeof toast === 'function') toast('Property photo restored'); } catch {}
+      }
+    } finally {
+      repairing = false;
+    }
   }
 
   function polishCopy() {
@@ -154,17 +191,19 @@
   function bind() {
     polishCopy();
     const button = $('parseBtn');
-    if (!button || button.dataset.travelLinksBound === '1') return;
-    button.dataset.travelLinksBound = '1';
-    const existing = button.onclick;
-    button.onclick = async function(event) {
-      const url = $('link')?.value.trim() || '';
-      if (isSupported(url) && !isAirbnb(url)) {
-        await handleTravelFetch(event);
-        return;
-      }
-      if (typeof existing === 'function') return existing.call(this, event);
-    };
+    if (button && button.dataset.travelLinksBound !== '1') {
+      button.dataset.travelLinksBound = '1';
+      const existing = button.onclick;
+      button.onclick = async function(event) {
+        const url = $('link')?.value.trim() || '';
+        if (isSupported(url) && !isAirbnb(url)) {
+          await handleTravelFetch(event);
+          return;
+        }
+        if (typeof existing === 'function') return existing.call(this, event);
+      };
+    }
+    setTimeout(repairMissingImages, 900);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, { once:true });
