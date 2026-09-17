@@ -43,6 +43,7 @@ jobs:
               '<script src="./people-page.js"></script>',
               '<script src="./app-shell.js"></script>',
               '<script src="./flights-main.js"></script>',
+              '<script src="./travel-links.js"></script>',
           ])
 
           inject('flight-natural-language-test.html', [
