@@ -11,12 +11,13 @@
     .fare{font-size:23px!important;line-height:1!important;text-align:right}.fare small{display:block;font-size:10px;color:#999;font-weight:750;margin-top:5px;text-transform:uppercase;letter-spacing:.04em}
     .tripDates{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:15px;background:#fafafa;border:1px solid #f0f0f0;border-radius:18px;padding:12px 13px}
     .tripDate span{display:block;font-size:9px;font-weight:900;color:#a1a1a1;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}.tripDate b{display:block;font-size:14px;line-height:1.2}.tripDate:last-child{text-align:right}.tripDateArrow{color:#bbb;font-weight:800}.nights{text-align:center;margin-top:7px;color:#888;font-size:10px;font-weight:750}
-    .outboundRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;padding:0 2px}.outboundLabel{font-size:10px;font-weight:900;color:#999;text-transform:uppercase;letter-spacing:.06em}.outboundTimes{font-size:14px;font-weight:850;color:#333;white-space:nowrap}
-    .smallFacts{margin-top:12px!important}.fact{font-size:11px!important;padding:7px 9px!important}.fact.airline{background:#f4f4f4}.fact.direct{background:#edf9f1;color:#23613f}.fact.stop{background:#fff7e6;color:#7b5c00}
+    .flightLegRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;padding:0 2px}.flightLegLabel{font-size:10px;font-weight:900;color:#999;text-transform:uppercase;letter-spacing:.06em}.flightLegTimes{font-size:14px;font-weight:850;color:#333;white-space:nowrap}
+    .returnRow{margin-top:8px;padding-top:9px;border-top:1px solid #f1f1f1}.returnPending{color:#aaa;font-weight:700}
+    .smallFacts{margin-top:12px!important}.fact{font-size:11px!important;padding:7px 9px!important}.fact.airline{background:#f4f4f4}.fact.direct{background:#edf9f1;color:#23613f}.fact.stop{background:#fff7e6;color:#7b5c00}.fact.returnAirline{background:#f8f2ff;color:#6b3aa6}
     .budgetLine{margin-top:12px;border-radius:14px;padding:10px 11px;font-size:11px;font-weight:800}.budgetLine.good{background:#effaf4;color:#23613f}.budgetLine.over{background:#fff1f4;color:#b21f43}.budgetLine.neutral{background:#f7f7f7;color:#666}
     .openFlight{margin-top:13px!important;color:#d91449!important;text-decoration:none!important}
     .liveMeta{font-size:12px!important;line-height:1.4}
-    @media(max-width:520px){.airportCode{font-size:18px}.airportName{max-width:92px}.fare{font-size:21px!important}.tripDate b{font-size:13px}.outboundTimes{font-size:13px}}
+    @media(max-width:520px){.airportCode{font-size:18px}.airportName{max-width:92px}.fare{font-size:21px!important}.tripDate b{font-size:13px}.flightLegTimes{font-size:13px}}
   `;
   document.head.appendChild(style);
 
@@ -103,7 +104,8 @@
     if (!meta || !results) return;
 
     const searchCount = data.searches_used ? ` · ${data.searches_used} sampled date searches` : '';
-    meta.textContent = `${rows.length} flight option${rows.length === 1 ? '' : 's'}${searchCount} · ${(Number(data.elapsed_ms || 0)/1000).toFixed(1)}s`;
+    const returnCount = data.return_details_loaded ? ` · ${data.return_details_loaded} return legs loaded` : '';
+    meta.textContent = `${rows.length} flight option${rows.length === 1 ? '' : 's'}${searchCount}${returnCount} · ${(Number(data.elapsed_ms || 0)/1000).toFixed(1)}s`;
     meta.classList.add('show');
 
     if (!rows.length) {
@@ -133,12 +135,20 @@
       if (r.airline) facts.push(`<span class="fact airline">${safe(r.airline)}</span>`);
       if (typeof r.stops === 'number') facts.push(`<span class="fact ${r.stops === 0 ? 'direct' : 'stop'}">${r.stops === 0 ? 'Direct' : `${r.stops} stop${r.stops === 1 ? '' : 's'}`}</span>`);
       if (r.total_duration) facts.push(`<span class="fact">${safe(duration(r.total_duration))}</span>`);
+      if (r.return_airline && r.return_airline !== r.airline) facts.push(`<span class="fact returnAirline">Return: ${safe(r.return_airline)}</span>`);
+
       const dep = timeOnly(r.departure_time), arr = timeOnly(r.arrival_time);
+      const rDep = timeOnly(r.return_departure_time), rArr = timeOnly(r.return_arrival_time);
       const fareLabel = r.return_date ? 'return' : 'one way';
+      const returnLine = r.return_date
+        ? `<div class="flightLegRow returnRow"><span class="flightLegLabel">Return flight</span><span class="flightLegTimes ${rDep || rArr ? '' : 'returnPending'}">${rDep || rArr ? `${safe(rDep || '—')} → ${safe(rArr || '—')}` : 'Open result for return times'}</span></div>`
+        : '';
+
       return `<article class="flightCard"><div class="flightBody">
         <div class="flightTop"><div class="routeHero">${airportMarkup(r.departure_airport)}<div class="routeArrow">→</div>${airportMarkup(r.arrival_airport)}</div><div class="fare">${moneySymbol(r.currency)}${Number(r.price).toLocaleString('en-GB')}<small>${fareLabel}</small></div></div>
         ${dateStrip(r.outbound_date, r.return_date)}
-        ${(dep || arr) ? `<div class="outboundRow"><span class="outboundLabel">Outbound flight</span><span class="outboundTimes">${safe(dep || '—')} → ${safe(arr || '—')}</span></div>` : ''}
+        ${(dep || arr) ? `<div class="flightLegRow"><span class="flightLegLabel">Outbound flight</span><span class="flightLegTimes">${safe(dep || '—')} → ${safe(arr || '—')}</span></div>` : ''}
+        ${returnLine}
         <div class="smallFacts">${facts.join('')}</div>
         ${budgetMarkup(r, data)}
         ${r.google_flights_url ? `<a class="openFlight" target="_blank" rel="noopener" href="${safe(r.google_flights_url)}">Open in Google Flights ↗</a>` : ''}
