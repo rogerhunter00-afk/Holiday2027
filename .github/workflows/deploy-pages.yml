@@ -46,6 +46,7 @@ jobs:
 
           inject('flight-natural-language-test.html', [
               '<script src="./flight-results-polish.js"></script>',
+              '<script src="./flight-price-check-polish.js"></script>',
           ])
           PY
       - name: Configure GitHub Pages
