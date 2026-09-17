@@ -44,10 +44,6 @@ jobs:
               '<script src="./app-shell.js"></script>',
           ])
 
-          inject('flight-serpapi-direct-test.html', [
-              '<script src="./flight-direct-fix.js"></script>',
-          ])
-
           inject('flight-natural-language-test.html', [
               '<script src="./flight-results-polish.js"></script>',
           ])
