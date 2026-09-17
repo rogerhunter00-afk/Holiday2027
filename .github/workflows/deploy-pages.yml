@@ -27,17 +27,30 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text()
-          tags = [
+
+          def inject(path, tags):
+              p = Path(path)
+              if not p.exists():
+                  return
+              s = p.read_text()
+              for tag in tags:
+                  if tag not in s:
+                      s = s.replace('</body>', tag + '\n</body>')
+              p.write_text(s)
+
+          inject('index.html', [
               '<script src="./ui-polish.js"></script>',
               '<script src="./people-page.js"></script>',
               '<script src="./app-shell.js"></script>',
-          ]
-          for tag in tags:
-              if tag not in s:
-                  s = s.replace('</body>', tag + '\n</body>')
-          p.write_text(s)
+          ])
+
+          inject('flight-serpapi-direct-test.html', [
+              '<script src="./flight-direct-fix.js"></script>',
+          ])
+
+          inject('flight-natural-language-test.html', [
+              '<script src="./flight-results-polish.js"></script>',
+          ])
           PY
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
