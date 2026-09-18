@@ -44,6 +44,7 @@ jobs:
               '<script src="./app-shell.js"></script>',
               '<script src="./flights-main.js"></script>',
               '<script src="./travel-links.js"></script>',
+              '<script src="./fx-gbp.js"></script>',
               '<script src="./shared-board.js"></script>',
           ])
 
