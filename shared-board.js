@@ -3,6 +3,7 @@
   const SUPABASE_KEY = 'sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
   const TRIP_ID = '9ec00f2b-9ee5-4bb9-81ab-69f6c7533189';
   const SHARE_URL = `${SUPABASE_URL}/functions/v1/share-shortlist`;
+  const WRITE_URL = `${SUPABASE_URL}/functions/v1/shared-board-write`;
   const PROFILE_KEY = 'holiday2027-profile-v2';
   const OPTIONS_KEY = 'holiday2027-options-v2';
 
@@ -99,6 +100,31 @@
     catch (e) { sessionPromise = null; throw e; }
   }
 
+  async function writeShared(action, payload = {}) {
+    const s = await getSession();
+    const me = localProfile();
+    const r = await fetch(WRITE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${s.access_token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({
+        action,
+        profile: me ? { name:me.name, colour:me.colour, avatar:me.avatar } : null,
+        ...payload
+      })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const err = new Error(data.error || `Shared board write returned ${r.status}`);
+      err.code = data.code || r.status;
+      throw err;
+    }
+    return data;
+  }
+
   async function ensureProfile() {
     const s = await getSession();
     const me = localProfile();
@@ -167,8 +193,9 @@
       const mine = rows.filter(o => !o._sharedBy || o._sharedBy === userId);
       const changed = mine.filter(o => force || !o._shared || lastPushed.get(o.id) !== fingerprint(o));
       for (const o of changed) {
-        const { error } = await sb.from('options').upsert(dbRowFromLocal(o), { onConflict: 'id' });
-        if (error) {
+        try {
+          await writeShared('upsert_option', { option: dbRowFromLocal(o) });
+        } catch (error) {
           console.warn('Holiday shared option sync failed', error);
           continue;
         }
@@ -176,8 +203,8 @@
         o._sharedBy = userId;
         lastPushed.set(o.id, fingerprint(o));
         if (o.voted) {
-          const { error: voteError } = await sb.from('votes').upsert({ option_id: o.id, user_id: userId }, { onConflict: 'option_id,user_id' });
-          if (voteError) console.warn('Holiday vote migration failed', voteError);
+          try { await writeShared('set_vote', { option_id:o.id, voted:true }); }
+          catch (voteError) { console.warn('Holiday vote migration failed', voteError); }
         }
       }
       storeOptions(rows);
@@ -270,6 +297,10 @@
       if (!o._shared) {
         await pushLocalOptions(true);
         o = localOptions().find(x => x.id === id) || o;
+      } else {
+        // Re-upsert the selected option before voting. This repairs stale local "_shared"
+        // flags from older builds where the database write could silently fail.
+        await writeShared('upsert_option', { option: dbRowFromLocal(o) });
       }
       const next = !o.voted;
       const beforeVotes = Number(o.votes || 0);
@@ -280,13 +311,7 @@
       try { if (typeof render === 'function') render(); } catch {}
       applyingRemote = false;
 
-      let error = null;
-      if (next) {
-        ({ error } = await sb.from('votes').upsert({ option_id: id, user_id: userId }, { onConflict: 'option_id,user_id' }));
-      } else {
-        ({ error } = await sb.from('votes').delete().eq('option_id', id).eq('user_id', userId));
-      }
-      if (error) throw error;
+      await writeShared('set_vote', { option_id:id, voted:next });
       scheduleReload();
     } catch (e) {
       console.warn('Vote sync failed', e);
@@ -310,8 +335,9 @@
     try { if (typeof render === 'function') render(); } catch {}
     applyingRemote = false;
     if (!o._shared) return;
-    const { error } = await sb.from('options').delete().eq('id', id).eq('added_by', userId);
-    if (error) {
+    try {
+      await writeShared('delete_option', { option_id:id });
+    } catch (error) {
       storeOptions(previous);
       try { if (typeof render === 'function') render(); } catch {}
       if (typeof toast === 'function') toast('Could not remove that option');
