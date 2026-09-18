@@ -469,10 +469,31 @@
 
     syncLegacyToManual(data);
 
+    // Preserve richer public-place details from Google Maps / activity screenshots
+    // as structured metadata rather than burying them in the note field.
+    try {
+      draftTravelMeta = {
+        ...(draftTravelMeta || {}),
+        location: data.location || draftTravelMeta?.location || '',
+        rating: typeof data.rating === 'number' ? data.rating : (draftTravelMeta?.rating ?? null),
+        reviewCount: data.review_count ?? draftTravelMeta?.reviewCount ?? null,
+        category: data.category || draftTravelMeta?.category || '',
+        openingHours: data.opening_hours_text || draftTravelMeta?.openingHours || '',
+        priceLevel: data.price_level || draftTravelMeta?.priceLevel || '',
+        reservationText: data.reservation_text || draftTravelMeta?.reservationText || ''
+      };
+    } catch {}
+
     const details = [];
     if (data.cancellation_text) details.push(data.cancellation_text);
     else if (data.free_cancellation === true) details.push('Free cancellation');
-    if (typeof data.rating === 'number') details.push(`Rating ${data.rating}${data.review_count ? ` (${data.review_count} reviews)` : ''}`);
+    if (typeof data.rating === 'number' && data.item_type !== 'activity') details.push(`Rating ${data.rating}${data.review_count ? ` (${data.review_count} reviews)` : ''}`);
+    if (data.item_type === 'activity') {
+      if (data.category) details.push(data.category);
+      if (data.opening_hours_text) details.push(data.opening_hours_text);
+      if (data.price_level) details.push(data.price_level);
+      if (data.reservation_text) details.push(data.reservation_text);
+    }
     if (data.airline) details.push(data.airline);
     if (data.departure || data.arrival) details.push([data.departure, data.arrival].filter(Boolean).join(' → '));
     if ($('nn') && details.length) {
