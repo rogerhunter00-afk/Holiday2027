@@ -309,6 +309,8 @@
       const count = btn.querySelector('.heart-count');
       if (glyph) glyph.textContent = voted ? '♥' : '♡';
       if (count) count.textContent = String(Math.max(0, votes || 0));
+      const card = btn.closest('.card.option');
+      if (card) card.dataset.votes = String(Math.max(0, votes || 0));
       btn.classList.remove('vote-tap');
       void btn.offsetWidth;
       btn.classList.add('vote-tap');
@@ -367,12 +369,20 @@
     paintVoteInstant(id, next, o.votes);
     storeOptions(rows);
 
-    // Re-render on the next frame so shortlist filtering / vote ordering also stays correct.
-    requestAnimationFrame(() => {
-      applyingRemote = true;
-      try { if (typeof render === 'function') render(); } catch {}
-      applyingRemote = false;
-    });
+    // Avoid rebuilding every card on normal Explore/category views: the heart/count
+    // is already painted above. Re-render only on Shortlist, where unticking must
+    // immediately remove the card from the filtered view.
+    let filter = 'all';
+    try { filter = currentFilter; } catch {}
+    if (filter === 'shortlist') {
+      requestAnimationFrame(() => {
+        applyingRemote = true;
+        try { if (typeof render === 'function') render(); } catch {}
+        applyingRemote = false;
+      });
+    } else {
+      try { updateShareButton(); } catch {}
+    }
 
     // Coalesce rapid tick/untick taps and sync only the final state.
     queueVoteSync(id);
