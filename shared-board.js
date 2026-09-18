@@ -188,7 +188,7 @@
     if (!s?.user?.id) return;
     syncBusy = true;
     try {
-      await ensureProfile();
+      await writeShared('sync_profile');
       const rows = normalizeIds();
       const mine = rows.filter(o => !o._sharedBy || o._sharedBy === userId);
       const changed = mine.filter(o => force || !o._shared || lastPushed.get(o.id) !== fingerprint(o));
@@ -316,7 +316,7 @@
     } catch (e) {
       console.warn('Vote sync failed', e);
       await loadRemoteBoard({ quiet: true });
-      if (typeof toast === 'function') toast('Vote did not sync — try again');
+      if (typeof toast === 'function') toast('Vote sync failed: ' + (e?.message || 'try again'));
     }
   }
 
@@ -462,7 +462,7 @@
     try {
       if (window.holidayGBPReady) await window.holidayGBPReady;
       await getSession();
-      await ensureProfile();
+      await writeShared('sync_profile');
       await pushLocalOptions(true); // one-time migration of this browser's existing board into Supabase
       await loadRemoteBoard({ quiet:true });
       subscribeRealtime();
