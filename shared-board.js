@@ -237,6 +237,7 @@
       }
       const profileMap = new Map((profileRows || []).map(p => [p.user_id, p]));
       const next = (optionRows || []).map(r => localFromDb(r, voteMap, profileMap));
+      if (typeof window.holidayNormalizeGBPOptions === 'function') await window.holidayNormalizeGBPOptions(next);
       applyingRemote = true;
       storeOptions(next);
       for (const o of next) if (o._sharedBy === userId) lastPushed.set(o.id, fingerprint(o));
@@ -433,6 +434,7 @@
     wrapRender();
     installSharedActions();
     try {
+      if (window.holidayGBPReady) await window.holidayGBPReady;
       await getSession();
       await ensureProfile();
       await pushLocalOptions(true); // one-time migration of this browser's existing board into Supabase
