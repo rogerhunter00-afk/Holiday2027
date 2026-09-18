@@ -145,18 +145,59 @@
     return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   }
 
+  function weekdayIndex(name = '') {
+    const key = name.toLowerCase().replace(/\./g, '').slice(0, 3);
+    return ({ sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 })[key] ?? null;
+  }
+
+  function inferYearForWeekday(day, month, weekday, startYear = new Date().getFullYear()) {
+    const wanted = weekdayIndex(weekday);
+    if (wanted == null) return startYear;
+    for (let y = startYear - 1; y <= startYear + 4; y++) {
+      const d = new Date(y, month - 1, day, 12);
+      if (d.getMonth() === month - 1 && d.getDate() === day && d.getDay() === wanted) return y;
+    }
+    return startYear;
+  }
+
   function parseDateRange(text = '') {
-    const t = text.replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
+    const t = text.replace(/[–—]/g, '-').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // 8–15 May 2027
     let m = t.match(/(\d{1,2})\s*-\s*(\d{1,2})\s+([A-Za-z]{3,9})\s+(20\d{2})/i);
     if (m) {
       const month = monthNum(m[3]);
       if (month) return [toISO(+m[4], month, +m[1]), toISO(+m[4], month, +m[2])];
     }
+
+    // 8 May–15 Jun 2027
     m = t.match(/(\d{1,2})\s+([A-Za-z]{3,9})\s*-\s*(\d{1,2})\s+([A-Za-z]{3,9})\s+(20\d{2})/i);
     if (m) {
       const m1 = monthNum(m[2]), m2 = monthNum(m[4]);
       if (m1 && m2) return [toISO(+m[5], m1, +m[1]), toISO(+m[5], m2, +m[3])];
     }
+
+    // Booking-style ranges often omit the year:
+    // Tue 22 Sep - Sun 27 Sep
+    m = t.match(/(?:(Sun|Mon|Tue|Wed|Thu|Fri|Sat)[A-Za-z]*\s+)?(\d{1,2})\s+([A-Za-z]{3,9})\s*-\s*(?:(Sun|Mon|Tue|Wed|Thu|Fri|Sat)[A-Za-z]*\s+)?(\d{1,2})\s+([A-Za-z]{3,9})(?:\s+(20\d{2}))?/i);
+    if (m) {
+      const d1 = +m[2], d2 = +m[5], mo1 = monthNum(m[3]), mo2 = monthNum(m[6]);
+      if (mo1 && mo2) {
+        let y1 = m[7] ? +m[7] : inferYearForWeekday(d1, mo1, m[1] || '', new Date().getFullYear());
+        let y2 = mo2 < mo1 ? y1 + 1 : y1;
+        if (!m[7] && m[4]) {
+          const wanted2 = weekdayIndex(m[4]);
+          if (wanted2 != null && new Date(y2, mo2 - 1, d2, 12).getDay() !== wanted2) {
+            // If weekday 1 was absent/ambiguous, use the return weekday to find the year.
+            const inferred2 = inferYearForWeekday(d2, mo2, m[4], y1);
+            y2 = inferred2;
+            if (mo2 >= mo1) y1 = inferred2;
+          }
+        }
+        return [toISO(y1, mo1, d1), toISO(y2, mo2, d2)];
+      }
+    }
+
     return null;
   }
 
@@ -199,7 +240,9 @@
   function syncManualToLegacy() {
     const ci = $('hvCheckin')?.value || '';
     const co = $('hvCheckout')?.value || '';
-    if ($('nd')) $('nd').value = ci && co ? prettyDateRange(ci, co) : '';
+    // Do not erase a Gemini-read date string just because the manual ISO fields
+    // could not be derived from it. Only overwrite Dates when both ISO dates exist.
+    if ($('nd') && ci && co) $('nd').value = prettyDateRange(ci, co);
 
     const guests = Math.max(1, parseInt($('hvGuests')?.value || '1', 10) || 1);
     if ($('ng')) $('ng').value = `${guests} ${guests === 1 ? 'adult' : 'adults'}`;
@@ -500,6 +543,7 @@
   }
 
   function resetV2Fields() {
+    if ($('nd')) $('nd').value = '';
     if ($('hvCheckin')) $('hvCheckin').value = '';
     if ($('hvCheckout')) $('hvCheckout').value = '';
     if ($('hvGuests')) $('hvGuests').value = '1';
