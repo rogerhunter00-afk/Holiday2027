@@ -182,6 +182,10 @@
           if (h2) h2.innerHTML = '<span class="stepnum">2</span><div><b>Add a screenshot <span style="color:#999;font-weight:650">(optional)</span></b><span>Use one if you want Gemini to pick up extra visible details such as opening hours, price level or reservation information.</span></div>';
           if ($('shotName')) $('shotName').textContent = 'Choose optional screenshot';
         } else {
+          const steps = document.querySelectorAll('.steps .step');
+          const h2 = steps?.[1]?.querySelector('.stephead');
+          if (h2) h2.innerHTML = '<span class="stepnum">2</span><div><b>Add dates and price</b><span>Upload the booking summary and Gemini will fill these for you. Manual entry is available as a backup.</span></div>';
+          if ($('shotName')) $('shotName').textContent = 'Choose booking screenshot';
           const imageNote = data.image ? 'property photo' : 'listing details';
           const method = data.social_preview_used ? ' from the share preview' : '';
           status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Real title and ${imageNote}${method}${data.location ? ', plus location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
