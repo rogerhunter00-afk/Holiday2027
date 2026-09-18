@@ -86,6 +86,12 @@
     const activityFacts = o.type==='activity'
       ? [o.openingHours ? `<span class="activity-fact">🕒 ${esc(o.openingHours)}</span>` : '', o.priceLevel ? `<span class="activity-fact">💰 ${esc(o.priceLevel)}</span>` : '', o.reservationText ? `<span class="activity-fact">✓ ${esc(o.reservationText)}</span>` : ''].filter(Boolean).join('')
       : '';
+    const countryInfo = (o.type==='stay' || o.type==='activity') && typeof window.holidayCountryInfo === 'function'
+      ? window.holidayCountryInfo(o)
+      : null;
+    const countryPill = countryInfo
+      ? `<div class="country-pill" aria-label="${esc(countryInfo.name)}"><span class="flag">${countryInfo.flag}</span><span class="name">${esc(countryInfo.name)}</span></div>`
+      : '';
     return `<article class="card option" data-id="${esc(o.id)}" data-type="${esc(o.type)}" data-votes="${votes}">
       <div class="photo">
         ${img}
@@ -93,6 +99,7 @@
         <button class="heart ${voted?'on':''}" data-vote="${esc(o.id)}" aria-label="${voted?'Remove vote':'Vote for this option'}">
           <span class="heart-glyph">${voted?'♥':'♡'}</span><span class="heart-count">${votes}</span>
         </button>
+        ${countryPill}
       </div>
       <div class="body">
         <div class="row"><h3>${esc(o.title||'Untitled option')}</h3><span class="price">${esc(o.price||'')}</span></div>
