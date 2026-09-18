@@ -25,12 +25,13 @@
       right:12px;top:12px;width:auto;min-width:46px;height:46px;padding:0 14px;
       border-radius:999px;display:flex;align-items:center;justify-content:center;gap:7px;
       background:rgba(255,255,255,.96);color:#e31c5f;box-shadow:0 4px 18px #00000014;
-      font-size:19px;font-weight:850;transition:transform .09s ease,background .10s ease,color .10s ease,box-shadow .10s ease;touch-action:manipulation;
+      font-size:19px;font-weight:850;transition:transform .09s ease,background .08s ease,box-shadow .10s ease;touch-action:manipulation;
       backdrop-filter:blur(8px)
     }
-    .heart .heart-count{font-size:13px;line-height:1;color:#4b4b4b;min-width:8px;text-align:center}
+    .heart .heart-glyph{color:var(--coral-deep);transition:none}
+    .heart .heart-count{font-size:13px;line-height:1;color:#4b4b4b;min-width:8px;text-align:center;transition:none}
     .heart.on{background:var(--coral);color:#fff;box-shadow:0 6px 20px #ff385c35}
-    .heart.on .heart-count{color:#fff}
+    .heart.on .heart-glyph,.heart.on .heart-count{color:#fff}
     .heart:active{transform:scale(.91)}
     .heart.on,.heart.vote-tap{animation:heartPop .16s ease}
     @keyframes heartPop{0%{transform:scale(.88)}55%{transform:scale(1.08)}100%{transform:scale(1)}}
