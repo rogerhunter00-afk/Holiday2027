@@ -155,7 +155,7 @@ const colours=['#FDE2E4','#FAD2E1','#E2ECE9','#BEE1E6','#DFE7FD','#E2EAFC','#CDE
 
 let profile=JSON.parse(localStorage.getItem(STORE_PROFILE)||'null');
 let options=JSON.parse(localStorage.getItem(STORE_OPTIONS)||'[]');
-let draftImage='', draftSource='', currentFilter='all', screenshotFile=null, screenshotUrl='';
+let draftImage='', draftSource='', draftTravelMeta={}, currentFilter='all', screenshotFile=null, screenshotUrl='';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -429,13 +429,13 @@ $('save').onclick=()=>{
     id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)),
     type:$('type').value,url,title,dates:$('nd').value.trim(),guests:$('ng').value.trim(),price:$('np').value.trim(),perPerson:$('npp').value.trim(),note:$('nn').value.trim(),
     cancellation:/free cancellation/i.test($('nn').value)?'Free cancellation':'',
-    image:draftImage,source:draftSource||hostLabel(url),addedBy:profile?.name||'You',colour:profile?.colour||'#DFE7FD',avatar:profile?.avatar||'',
+    image:draftImage,source:draftSource||hostLabel(url),location:draftTravelMeta.location||'',rating:draftTravelMeta.rating??null,reviewCount:draftTravelMeta.reviewCount??null,description:draftTravelMeta.description||'',addedBy:profile?.name||'You',colour:profile?.colour||'#DFE7FD',avatar:profile?.avatar||'',
     votes:0,voted:false,createdAt:Date.now()
   };
   options.unshift(o);persist();render();closeModal();resetForm();toast('Added to the board');
 };
 function resetForm(){
-  ['link','nt','nd','ng','np','npp','nn'].forEach(id=>$(id).value='');draftImage='';draftSource='';$('status').className='status';$('linkPreview').classList.remove('show');
+  ['link','nt','nd','ng','np','npp','nn'].forEach(id=>$(id).value='');draftImage='';draftSource='';draftTravelMeta={};$('status').className='status';$('linkPreview').classList.remove('show');
   screenshotFile=null;if(screenshotUrl){URL.revokeObjectURL(screenshotUrl);screenshotUrl=''};$('screenshot').value='';$('shotThumb').removeAttribute('src');$('shotBox').classList.remove('has');$('shotName').textContent='Choose screenshot';$('ocrBtn').disabled=true;$('ocrFound').classList.remove('show');$('ocrProgress').classList.remove('show');$('ocrBar').style.width='0%';
 }
 document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
