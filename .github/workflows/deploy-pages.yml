@@ -40,7 +40,7 @@ jobs:
 
           inject('index.html', [
               '<script src="./ui-polish.js"></script>',
-              '<script src="./people-page.js"></script>',
+              '<script src="./people-page-v2.js"></script>',
               '<script src="./app-shell.js"></script>',
               '<script src="./flights-main.js"></script>',
               '<script src="./travel-links.js"></script>',
