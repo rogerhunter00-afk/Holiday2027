@@ -17,7 +17,9 @@
     /(^|\.)lastminute\.com$/i, /(^|\.)jet2holidays\.com$/i,
     /(^|\.)tui\.(co\.uk|com)$/i, /(^|\.)hostelworld\.com$/i,
     /(^|\.)trivago\.com$/i, /(^|\.)kayak\.(com|co\.uk)$/i,
-    /(^|\.)skyscanner\.(net|com)$/i
+    /(^|\.)skyscanner\.(net|com)$/i,
+    /(^|\.)maps\.app\.goo\.gl$/i, /(^|\.)goo\.gl$/i,
+    /(^|\.)google\.(com|co\.uk|ie|com\.mt)$/i
   ];
 
   function isAirbnb(url) {
@@ -27,6 +29,13 @@
   function isBooking(url) {
     try { return /(^|\.)booking\.com$/i.test(new URL(url).hostname); }
     catch { return false; }
+  }
+  function isGoogleMaps(url) {
+    try {
+      const u = new URL(url);
+      const h = u.hostname.replace(/^www\./i,'').toLowerCase();
+      return h === 'maps.app.goo.gl' || h === 'goo.gl' || (/^google\./.test(h) && /^\/maps(?:\/|$)/i.test(u.pathname));
+    } catch { return false; }
   }
   function isSupported(url) {
     try {
@@ -110,6 +119,12 @@
         rating: typeof data.rating === 'number' ? data.rating : null,
         reviewCount: data.review_count ?? null,
         description: description || '',
+        category: data.category || '',
+        openState: data.open_state || '',
+        hours: data.hours || null,
+        mapsDataId: data.maps_data_id || null,
+        mapsPlaceId: data.maps_place_id || null,
+        gps: data.gps_coordinates || null,
         finalUrl: data.final_url || ''
       };
     } catch {}
@@ -144,13 +159,33 @@
     try {
       const data = await parseTravelLink(url);
       setPreview(data);
+      const maps = isGoogleMaps(url) || data.provider === 'Google Maps' || data.item_type === 'activity';
       const fallbackText = data.social_preview_used ? ' · share preview loaded' : (data.used_fallback ? ' · browser fallback used' : '');
-      setLinkStatus(`${data.provider || 'Travel'} listing found${fallbackText}. Upload the booking summary next for the exact dates and total price.`, 'ok');
+      setLinkStatus(
+        maps
+          ? `${data.provider || 'Google Maps'} place found${fallbackText}. Screenshot is optional if you want to add extra visible details.`
+          : `${data.provider || 'Travel'} listing found${fallbackText}. Upload the booking summary next for the exact dates and total price.`,
+        'ok'
+      );
       const status = $('status');
       if (status) {
-        const imageNote = data.image ? 'property photo' : 'listing details';
-        const method = data.social_preview_used ? ' from the share preview' : '';
-        status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Real title and ${imageNote}${method}${data.location ? ', plus location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
+        if (maps) {
+          status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Google Maps')} place found</span><div style="margin-top:5px;color:#47705a">${data.image ? 'Photo, ' : ''}${data.location ? 'location, ' : ''}${typeof data.rating === 'number' ? 'rating and ' : ''}place details loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. You can add it now, or use a screenshot for extra information.</div>`;
+          const review = $('hvReview');
+          if (review) {
+            review.classList.add('show');
+            const note = $('hvReviewNote');
+            if (note) note.textContent = 'Google Maps filled these details. The screenshot step is optional for restaurants, cafés, attractions and destinations.';
+          }
+          const steps = document.querySelectorAll('.steps .step');
+          const h2 = steps?.[1]?.querySelector('.stephead');
+          if (h2) h2.innerHTML = '<span class="stepnum">2</span><div><b>Add a screenshot <span style="color:#999;font-weight:650">(optional)</span></b><span>Use one if you want Gemini to pick up extra visible details such as opening hours, price level or reservation information.</span></div>';
+          if ($('shotName')) $('shotName').textContent = 'Choose optional screenshot';
+        } else {
+          const imageNote = data.image ? 'property photo' : 'listing details';
+          const method = data.social_preview_used ? ' from the share preview' : '';
+          status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Real title and ${imageNote}${method}${data.location ? ', plus location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
+        }
       }
     } catch (err) {
       setLinkStatus(`Could not automatically read this link. You can still add it manually below. ${err?.message || err}`, 'err');
@@ -202,9 +237,9 @@
   function polishCopy() {
     const steps = document.querySelectorAll('.steps .step');
     const h1 = steps?.[0]?.querySelector('.stephead');
-    if (h1) h1.innerHTML = '<span class="stepnum">1</span><div><b>Paste the link</b><span>Airbnb, Booking.com, Hotels.com, Expedia, Vrbo, Agoda and other major travel sites.</span></div>';
+    if (h1) h1.innerHTML = '<span class="stepnum">1</span><div><b>Paste the link</b><span>Stays from Airbnb/Booking.com, or Google Maps links for restaurants, cafés, attractions and destinations.</span></div>';
     const link = $('link');
-    if (link) link.placeholder = 'Paste Airbnb, Booking.com, Hotels.com, Expedia, Vrbo…';
+    if (link) link.placeholder = 'Paste Airbnb, Booking.com or Google Maps share link…';
   }
 
   function bind() {
