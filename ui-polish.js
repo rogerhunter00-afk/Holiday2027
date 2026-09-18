@@ -54,6 +54,11 @@
     .stay-price-detail{margin-top:8px;font-size:12px;color:#555;font-weight:750}
     .stay-cancel{display:inline-flex;align-items:center;margin-top:8px;border-radius:999px;padding:6px 9px;background:#effaf4;color:#2d6a48;font-size:10px;font-weight:850}
     .stay-desc{margin:8px 0 0;color:#777;font-size:12px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .activity-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px;color:#717171;font-size:11px;line-height:1.35}
+    .activity-meta .activity-rating{font-weight:800;color:#4c4c4c}
+    .activity-facts{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+    .activity-fact{display:inline-flex;align-items:center;gap:5px;background:#f7f7f7;border-radius:999px;padding:7px 10px;font-size:10px;color:#555;font-weight:750}
+    .activity-desc{margin:8px 0 0;color:#777;font-size:12px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   `;
   document.head.appendChild(style);
 
@@ -75,6 +80,12 @@
     const stayFacts = o.type==='stay'
       ? [o.dates ? `<span class="stay-fact">📅 ${esc(o.dates)}</span>` : '', o.guests ? `<span class="stay-fact">👥 ${esc(o.guests)}</span>` : ''].filter(Boolean).join('')
       : '';
+    const activityMeta = o.type==='activity'
+      ? [o.category ? esc(o.category) : '', o.location ? esc(o.location) : '', typeof o.rating==='number' ? `<span class="activity-rating">★ ${esc(o.rating)}${o.reviewCount ? ` · ${esc(o.reviewCount)} reviews` : ''}</span>` : ''].filter(Boolean)
+      : [];
+    const activityFacts = o.type==='activity'
+      ? [o.openingHours ? `<span class="activity-fact">🕒 ${esc(o.openingHours)}</span>` : '', o.priceLevel ? `<span class="activity-fact">💰 ${esc(o.priceLevel)}</span>` : '', o.reservationText ? `<span class="activity-fact">✓ ${esc(o.reservationText)}</span>` : ''].filter(Boolean).join('')
+      : '';
     return `<article class="card option" data-id="${esc(o.id)}" data-type="${esc(o.type)}" data-votes="${votes}">
       <div class="photo">
         ${img}
@@ -86,10 +97,13 @@
       <div class="body">
         <div class="row"><h3>${esc(o.title||'Untitled option')}</h3><span class="price">${esc(o.price||'')}</span></div>
         ${o.type==='stay' && stayMeta.length ? `<div class="stay-secondary">${stayMeta.map((x,i)=>`${i?'<span class="dot">•</span>':''}<span>${x}</span>`).join('')}</div>` : ''}
-        ${o.type==='stay' && stayFacts ? `<div class="stay-facts">${stayFacts}</div>` : ((o.dates||o.guests)?`<p class="factsline">${[o.dates,o.guests].filter(Boolean).map(esc).join(' · ')}</p>`:'')}
+        ${o.type==='stay' && stayFacts ? `<div class="stay-facts">${stayFacts}</div>` : ''}
+        ${o.type==='activity' && activityMeta.length ? `<div class="activity-meta">${activityMeta.map((x,i)=>`${i?'<span>•</span>':''}<span>${x}</span>`).join('')}</div>` : ''}
+        ${o.type==='activity' && activityFacts ? `<div class="activity-facts">${activityFacts}</div>` : ''}
+        ${o.type!=='stay' && o.type!=='activity' && (o.dates||o.guests)?`<p class="factsline">${[o.dates,o.guests].filter(Boolean).map(esc).join(' · ')}</p>`:''}
         ${o.perPerson?`<div class="${o.type==='stay'?'stay-price-detail':'factsline pp'}">${esc(o.perPerson)}</div>`:''}
         ${o.cancellation?`<div class="${o.type==='stay'?'stay-cancel':'factsline'}">✓ ${esc(o.cancellation)}</div>`:''}
-        ${o.note?`<p class="sub">${esc(o.note)}</p>`:(o.type==='stay'&&o.description?`<p class="stay-desc">${esc(o.description)}</p>`:'')}
+        ${o.note?`<p class="sub">${esc(o.note)}</p>`:(o.type==='stay'&&o.description?`<p class="stay-desc">${esc(o.description)}</p>`:(o.type==='activity'&&o.description?`<p class="activity-desc">${esc(o.description)}</p>`:''))}
         <div class="cardlinks">
           <a class="openlink" href="${esc(o.url)}" target="_blank" rel="noopener">Open original ↗</a>
           <button class="more cardmore" data-delete="${esc(o.id)}" aria-label="More options">⋯</button>
