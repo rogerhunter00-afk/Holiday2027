@@ -100,8 +100,19 @@
     }
     $('linkPreview')?.classList.add('show');
 
-    if ($('nn') && description && !$('nn').value.trim()) $('nn').value = description.slice(0, 320);
-    try { draftImage = image; draftSource = provider; } catch {}
+    // Keep the provider description as structured metadata instead of stuffing a long paragraph into Quick note.
+    // This gives the main card a cleaner hierarchy while preserving the useful listing context.
+    try {
+      draftImage = image;
+      draftSource = provider;
+      draftTravelMeta = {
+        location: data.location || '',
+        rating: typeof data.rating === 'number' ? data.rating : null,
+        reviewCount: data.review_count ?? null,
+        description: description || '',
+        finalUrl: data.final_url || ''
+      };
+    } catch {}
   }
 
   async function parseTravelLink(url) {
@@ -133,12 +144,13 @@
     try {
       const data = await parseTravelLink(url);
       setPreview(data);
-      const fallbackText = data.used_fallback ? ' · browser fallback used' : '';
+      const fallbackText = data.social_preview_used ? ' · share preview loaded' : (data.used_fallback ? ' · browser fallback used' : '');
       setLinkStatus(`${data.provider || 'Travel'} listing found${fallbackText}. Upload the booking summary next for the exact dates and total price.`, 'ok');
       const status = $('status');
       if (status) {
-        const imageNote = data.image ? 'photo' : 'listing details';
-        status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Title and ${imageNote}${data.location ? ', plus location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
+        const imageNote = data.image ? 'property photo' : 'listing details';
+        const method = data.social_preview_used ? ' from the share preview' : '';
+        status.innerHTML = `<span class="hv-link-ok">${esc(data.provider || 'Travel')} listing found</span><div style="margin-top:5px;color:#47705a">Real title and ${imageNote}${method}${data.location ? ', plus location' : ''} loaded${data.elapsed_ms ? ` in ${data.elapsed_ms} ms` : ''}. Add the booking screenshot for exact dates and price.</div>`;
       }
     } catch (err) {
       setLinkStatus(`Could not automatically read this link. You can still add it manually below. ${err?.message || err}`, 'err');
@@ -161,10 +173,16 @@
       for (const o of targets) {
         try {
           const data = await parseTravelLink(o.url);
-          if (data?.image) {
-            o.image = data.image;
-            if ((!o.title || /^Booking\.com$/i.test(o.title)) && data.title) o.title = data.title;
+          if (data?.image || data?.title) {
+            if (data.image) o.image = data.image;
+            // Booking screenshots often identify the room type (e.g. "Superior Double Room").
+            // The social share preview gives us the actual property name, which is the correct card title.
+            if (data.title && !/^Booking\.com$/i.test(data.title)) o.title = data.title;
             if (data.provider) o.source = data.provider;
+            if (data.location) o.location = data.location;
+            if (typeof data.rating === 'number') o.rating = data.rating;
+            if (data.review_count != null) o.reviewCount = data.review_count;
+            if (data.description) o.description = data.description;
             changed = true;
           }
         } catch {}
@@ -173,7 +191,8 @@
         localStorage.setItem('holiday2027-options-v2', JSON.stringify(all));
         try { options = all; } catch {}
         try { if (typeof render === 'function') render(); } catch {}
-        try { if (typeof toast === 'function') toast('Property photo restored'); } catch {}
+        try { if (typeof window.holidaySharedSync === 'function') window.holidaySharedSync(); } catch {}
+        try { if (typeof toast === 'function') toast('Booking property details refreshed'); } catch {}
       }
     } finally {
       repairing = false;
