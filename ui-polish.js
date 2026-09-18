@@ -45,6 +45,15 @@
     .more.cardmore:active{transform:scale(.94);background:#f0f0f0}
     .meta{justify-content:flex-start}
     .votes{display:none!important}
+
+    /* Cleaner stay-card information hierarchy */
+    .stay-secondary{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px;color:#717171;font-size:12px;line-height:1.35}
+    .stay-secondary .dot{color:#bbb}
+    .stay-facts{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+    .stay-fact{display:inline-flex;align-items:center;gap:5px;background:#f7f7f7;border-radius:999px;padding:7px 10px;font-size:11px;color:#555;font-weight:750}
+    .stay-price-detail{margin-top:8px;font-size:12px;color:#555;font-weight:750}
+    .stay-cancel{display:inline-flex;align-items:center;margin-top:8px;border-radius:999px;padding:6px 9px;background:#effaf4;color:#2d6a48;font-size:10px;font-weight:850}
+    .stay-desc{margin:8px 0 0;color:#777;font-size:12px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   `;
   document.head.appendChild(style);
 
@@ -54,6 +63,12 @@
     const voted=!!o.voted;
     const votes=Math.max(0,o.votes||0);
     const img=o.image?`<img src="${esc(o.image)}" alt="">`:`<div style="width:100%;height:100%;display:grid;place-items:center;font-size:42px;color:#aaa;background:#f3f3f3">${o.type==='flight'?'✈':o.type==='stay'?'⌂':'☀'}</div>`;
+    const stayMeta = o.type==='stay'
+      ? [o.location ? esc(o.location) : '', (typeof o.rating==='number' ? `★ ${esc(o.rating)}${o.reviewCount ? ` (${esc(o.reviewCount)})` : ''}` : '')].filter(Boolean)
+      : [];
+    const stayFacts = o.type==='stay'
+      ? [o.dates ? `<span class="stay-fact">📅 ${esc(o.dates)}</span>` : '', o.guests ? `<span class="stay-fact">👥 ${esc(o.guests)}</span>` : ''].filter(Boolean).join('')
+      : '';
     return `<article class="card option" data-id="${esc(o.id)}" data-type="${esc(o.type)}" data-votes="${votes}">
       <div class="photo">
         ${img}
@@ -64,10 +79,11 @@
       </div>
       <div class="body">
         <div class="row"><h3>${esc(o.title||'Untitled option')}</h3><span class="price">${esc(o.price||'')}</span></div>
-        ${(o.dates||o.guests)?`<p class="factsline">${[o.dates,o.guests].filter(Boolean).map(esc).join(' · ')}</p>`:''}
-        ${o.perPerson?`<p class="factsline pp">${esc(o.perPerson)}</p>`:''}
-        ${o.cancellation?`<p class="factsline">✓ ${esc(o.cancellation)}</p>`:''}
-        ${o.note?`<p class="sub">${esc(o.note)}</p>`:''}
+        ${o.type==='stay' && stayMeta.length ? `<div class="stay-secondary">${stayMeta.map((x,i)=>`${i?'<span class="dot">•</span>':''}<span>${x}</span>`).join('')}</div>` : ''}
+        ${o.type==='stay' && stayFacts ? `<div class="stay-facts">${stayFacts}</div>` : ((o.dates||o.guests)?`<p class="factsline">${[o.dates,o.guests].filter(Boolean).map(esc).join(' · ')}</p>`:'')}
+        ${o.perPerson?`<div class="${o.type==='stay'?'stay-price-detail':'factsline pp'}">${esc(o.perPerson)}</div>`:''}
+        ${o.cancellation?`<div class="${o.type==='stay'?'stay-cancel':'factsline'}">✓ ${esc(o.cancellation)}</div>`:''}
+        ${o.note?`<p class="sub">${esc(o.note)}</p>`:(o.type==='stay'&&o.description?`<p class="stay-desc">${esc(o.description)}</p>`:'')}
         <div class="cardlinks">
           <a class="openlink" href="${esc(o.url)}" target="_blank" rel="noopener">Open original ↗</a>
           <button class="more cardmore" data-delete="${esc(o.id)}" aria-label="More options">⋯</button>
