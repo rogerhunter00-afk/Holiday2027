@@ -63,8 +63,14 @@
     const voted=!!o.voted;
     const votes=Math.max(0,o.votes||0);
     const img=o.image?`<img src="${esc(o.image)}" alt="">`:`<div style="width:100%;height:100%;display:grid;place-items:center;font-size:42px;color:#aaa;background:#f3f3f3">${o.type==='flight'?'✈':o.type==='stay'?'⌂':'☀'}</div>`;
+    const isBookingStay = o.type==='stay' && (/booking\.com/i.test(String(o.source||'')) || /booking\.com/i.test(String(o.url||'')));
+    const ratingText = typeof o.rating==='number'
+      ? (isBookingStay
+          ? `${Number(o.rating).toFixed(1)}/10${o.reviewCount ? ` · ${esc(o.reviewCount)} reviews` : ''}`
+          : `★ ${esc(o.rating)}${o.reviewCount ? ` (${esc(o.reviewCount)})` : ''}`)
+      : '';
     const stayMeta = o.type==='stay'
-      ? [o.location ? esc(o.location) : '', (typeof o.rating==='number' ? `★ ${esc(o.rating)}${o.reviewCount ? ` (${esc(o.reviewCount)})` : ''}` : '')].filter(Boolean)
+      ? [o.location ? esc(o.location) : '', ratingText].filter(Boolean)
       : [];
     const stayFacts = o.type==='stay'
       ? [o.dates ? `<span class="stay-fact">📅 ${esc(o.dates)}</span>` : '', o.guests ? `<span class="stay-fact">👥 ${esc(o.guests)}</span>` : ''].filter(Boolean).join('')
