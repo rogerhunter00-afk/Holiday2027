@@ -47,6 +47,7 @@ jobs:
               '<script src="./date-picker.js"></script>',
               '<script src="./fx-gbp.js"></script>',
               '<script src="./shared-board-v3.js"></script>',
+              '<script src="./location-shortlist-ui.js"></script>',
           ])
 
           inject('flight-natural-language-test.html', [
