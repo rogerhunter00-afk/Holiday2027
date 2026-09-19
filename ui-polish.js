@@ -65,10 +65,28 @@
       background:rgba(255,255,255,.96);box-shadow:0 4px 18px #00000014;display:flex;align-items:center;gap:7px;
       color:#333;font-size:12px;font-weight:850;line-height:1;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)
     }
-    .date-pill .date-icon{font-size:15px;line-height:1}.date-pill .date-text{white-space:nowrap}
+    .date-pill .date-text{white-space:nowrap}
     @media(max-width:390px){.date-pill{padding:0 11px;font-size:11px}}
   `;
   document.head.appendChild(style);
+
+  function fallbackCountryInfo(o){
+    const text=[o?.location,o?.title,o?.description,o?.note].filter(Boolean).join(' ').toLowerCase();
+    const countries=[
+      ['Malta','MT',['malta','sliema','valletta','st julian','st. julian','paola','hal luqa','luqa','gozo','mdina']],
+      ['Italy','IT',['italy','italia','rome','roma','milan','milano','venice','florence','naples','sicily','sorrento']],
+      ['Spain','ES',['spain','españa','espana','barcelona','madrid','alicante','malaga','málaga','seville','ibiza','mallorca','majorca','tenerife']],
+      ['Portugal','PT',['portugal','lisbon','lisboa','porto','faro','algarve','madeira']],
+      ['France','FR',['france','paris','nice','lyon','marseille','bordeaux']],
+      ['Greece','GR',['greece','athens','santorini','mykonos','crete','rhodes','corfu']],
+      ['United Kingdom','GB',['united kingdom','england','scotland','wales','glasgow','edinburgh','london']]
+    ];
+    const flag=code=>code.replace(/[A-Z]/g,c=>String.fromCodePoint(127397+c.charCodeAt()));
+    for(const [name,code,keys] of countries){
+      if(keys.some(k=>text.includes(k))) return {name,code,flag:flag(code)};
+    }
+    return null;
+  }
 
   function compactDateRange(o){
     const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -125,7 +143,7 @@
       : '';
     const dateLabel = compactDateRange(o);
     const datePill = dateLabel
-      ? `<div class="date-pill" aria-label="Dates ${esc(dateLabel)}"><span class="date-icon">📅</span><span class="date-text">${esc(dateLabel)}</span></div>`
+      ? `<div class="date-pill" aria-label="Dates ${esc(dateLabel)}"><span class="date-text">${esc(dateLabel)}</span></div>`
       : '';
     const activityMeta = o.type==='activity'
       ? [o.category ? esc(o.category) : '', o.location ? esc(o.location) : '', typeof o.rating==='number' ? `<span class="activity-rating">★ ${esc(o.rating)}${o.reviewCount ? ` · ${esc(o.reviewCount)} reviews` : ''}</span>` : ''].filter(Boolean)
@@ -133,8 +151,8 @@
     const activityFacts = o.type==='activity'
       ? [o.openingHours ? `<span class="activity-fact">🕒 ${esc(o.openingHours)}</span>` : '', o.priceLevel ? `<span class="activity-fact">💰 ${esc(o.priceLevel)}</span>` : '', o.reservationText ? `<span class="activity-fact">✓ ${esc(o.reservationText)}</span>` : ''].filter(Boolean).join('')
       : '';
-    const countryInfo = (o.type==='stay' || o.type==='activity') && typeof window.holidayCountryInfo === 'function'
-      ? window.holidayCountryInfo(o)
+    const countryInfo = (o.type==='stay' || o.type==='activity')
+      ? ((typeof window.holidayCountryInfo === 'function' ? window.holidayCountryInfo(o) : null) || fallbackCountryInfo(o))
       : null;
     const countryPill = countryInfo
       ? `<div class="country-pill" aria-label="${esc(countryInfo.name)}"><span class="flag">${countryInfo.flag}</span><span class="name">${esc(countryInfo.name)}</span></div>`
