@@ -407,6 +407,10 @@
     try {
       if (image) draftImage = image;
       draftSource = 'Airbnb';
+      draftTravelMeta = {
+        ...(draftTravelMeta || {}),
+        location: d.location || draftTravelMeta?.location || ''
+      };
     } catch {}
 
     if ($('nt') && (!$('nt').value.trim() || isGenericTitle($('nt').value.trim()))) $('nt').value = title;
