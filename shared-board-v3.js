@@ -306,6 +306,39 @@
   }
   window.holidaySharedSync = schedulePush;
 
+  window.holidaySetCountry = async (id, country, countryCode) => {
+    const rows = localOptions();
+    const option = rows.find(o => String(o.id) === String(id));
+    if (!option) throw new Error('Option not found');
+
+    const previous = { country:option.country || '', countryCode:option.countryCode || '' };
+    option.country = country || '';
+    option.countryCode = countryCode || '';
+    storeOptions(rows);
+
+    applyingRemote = true;
+    try { if (typeof render === 'function') render(); } catch {}
+    applyingRemote = false;
+
+    try {
+      await writeShared('set_country', {
+        option_id:String(id),
+        country:country || null,
+        country_code:countryCode || null
+      });
+      scheduleReload();
+      return true;
+    } catch (e) {
+      option.country = previous.country;
+      option.countryCode = previous.countryCode;
+      storeOptions(rows);
+      applyingRemote = true;
+      try { if (typeof render === 'function') render(); } catch {}
+      applyingRemote = false;
+      throw e;
+    }
+  };
+
   function paintVoteInstant(id, voted, votes) {
     document.querySelectorAll('[data-vote]').forEach(btn => {
       if (btn.dataset.vote !== id) return;
