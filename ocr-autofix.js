@@ -407,9 +407,14 @@
     try {
       if (image) draftImage = image;
       draftSource = 'Airbnb';
+      const country = typeof window.holidayResolveCountry === 'function'
+        ? window.holidayResolveCountry({ country:d.country, countryCode:d.country_code, location:d.location, title:d.title })
+        : null;
       draftTravelMeta = {
         ...(draftTravelMeta || {}),
-        location: d.location || draftTravelMeta?.location || ''
+        location: d.location || draftTravelMeta?.location || '',
+        country: d.country || country?.name || draftTravelMeta?.country || '',
+        countryCode: d.country_code || country?.code || draftTravelMeta?.countryCode || ''
       };
     } catch {}
 
@@ -517,6 +522,8 @@
       draftTravelMeta = {
         ...(draftTravelMeta || {}),
         location: data.location || draftTravelMeta?.location || '',
+        country: data.country || draftTravelMeta?.country || '',
+        countryCode: data.country_code || draftTravelMeta?.countryCode || '',
         rating: typeof data.rating === 'number' ? data.rating : (draftTravelMeta?.rating ?? null),
         reviewCount: data.review_count ?? draftTravelMeta?.reviewCount ?? null,
         category: data.category || draftTravelMeta?.category || '',
@@ -524,6 +531,16 @@
         priceLevel: data.price_level || draftTravelMeta?.priceLevel || '',
         reservationText: data.reservation_text || draftTravelMeta?.reservationText || ''
       };
+    } catch {}
+
+    try {
+      const resolvedCountry = typeof window.holidayResolveCountry === 'function'
+        ? window.holidayResolveCountry({ country:draftTravelMeta?.country, countryCode:draftTravelMeta?.countryCode, location:draftTravelMeta?.location, title:data.title })
+        : null;
+      if (resolvedCountry) {
+        draftTravelMeta.country = resolvedCountry.name;
+        draftTravelMeta.countryCode = resolvedCountry.code;
+      }
     } catch {}
 
     const details = [];
