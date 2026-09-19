@@ -152,7 +152,7 @@
       ? [o.openingHours ? `<span class="activity-fact">🕒 ${esc(o.openingHours)}</span>` : '', o.priceLevel ? `<span class="activity-fact">💰 ${esc(o.priceLevel)}</span>` : '', o.reservationText ? `<span class="activity-fact">✓ ${esc(o.reservationText)}</span>` : ''].filter(Boolean).join('')
       : '';
     const countryInfo = (o.type==='stay' || o.type==='activity')
-      ? ((typeof window.holidayCountryInfo === 'function' ? window.holidayCountryInfo(o) : null) || fallbackCountryInfo(o))
+      ? ((typeof window.holidayResolveCountry === 'function' ? window.holidayResolveCountry(o) : null) || (typeof window.holidayCountryInfo === 'function' ? window.holidayCountryInfo(o) : null) || fallbackCountryInfo(o))
       : null;
     const countryPill = countryInfo
       ? `<div class="country-pill" aria-label="${esc(countryInfo.name)}"><span class="flag">${countryInfo.flag}</span><span class="name">${esc(countryInfo.name)}</span></div>`
