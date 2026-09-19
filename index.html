@@ -425,13 +425,14 @@ $('save').onclick=()=>{
   const url=$('link').value.trim(), title=$('nt').value.trim();
   if(!/^https?:\/\//i.test(url)){setStatus('Add a valid link first.','err');return}
   if(!title){$('nt').focus();return}
-  const o={
+  const base={
     id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)),
     type:$('type').value,url,title,dates:$('nd').value.trim(),guests:$('ng').value.trim(),price:$('np').value.trim(),perPerson:$('npp').value.trim(),note:$('nn').value.trim(),
     cancellation:/free cancellation/i.test($('nn').value)?'Free cancellation':'',
-    image:draftImage,source:draftSource||hostLabel(url),location:draftTravelMeta.location||'',rating:draftTravelMeta.rating??null,reviewCount:draftTravelMeta.reviewCount??null,description:draftTravelMeta.description||'',category:draftTravelMeta.category||'',openingHours:draftTravelMeta.openingHours||'',priceLevel:draftTravelMeta.priceLevel||'',reservationText:draftTravelMeta.reservationText||'',mapsDataId:draftTravelMeta.mapsDataId||null,mapsPlaceId:draftTravelMeta.mapsPlaceId||null,gps:draftTravelMeta.gps||null,addedBy:profile?.name||'You',colour:profile?.colour||'#DFE7FD',avatar:profile?.avatar||'',
+    image:draftImage,source:draftSource||hostLabel(url),location:draftTravelMeta.location||'',country:draftTravelMeta.country||'',countryCode:draftTravelMeta.countryCode||'',rating:draftTravelMeta.rating??null,reviewCount:draftTravelMeta.reviewCount??null,description:draftTravelMeta.description||'',category:draftTravelMeta.category||'',openingHours:draftTravelMeta.openingHours||'',priceLevel:draftTravelMeta.priceLevel||'',reservationText:draftTravelMeta.reservationText||'',mapsDataId:draftTravelMeta.mapsDataId||null,mapsPlaceId:draftTravelMeta.mapsPlaceId||null,gps:draftTravelMeta.gps||null,addedBy:profile?.name||'You',colour:profile?.colour||'#DFE7FD',avatar:profile?.avatar||'',
     votes:0,voted:false,createdAt:Date.now()
   };
+  const o=typeof window.holidayEnrichCountry==='function'?window.holidayEnrichCountry(base):base;
   options.unshift(o);persist();render();closeModal();resetForm();toast('Added to the board');
 };
 function resetForm(){
