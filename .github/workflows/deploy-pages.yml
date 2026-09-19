@@ -50,6 +50,7 @@ jobs:
               '<script src="./fx-gbp.js"></script>',
               '<script src="./shared-board-v3.js"></script>',
               '<script src="./location-shortlist-ui.js"></script>',
+              '<script src="./country-picker.js"></script>',
           ])
 
           inject('flight-natural-language-test.html', [
