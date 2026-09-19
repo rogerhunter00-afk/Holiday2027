@@ -114,8 +114,13 @@
     try {
       draftImage = image;
       draftSource = provider;
+      const country = typeof window.holidayResolveCountry === 'function'
+        ? window.holidayResolveCountry({ country:data.country, countryCode:data.country_code, location:data.location, title:data.title, description:data.description })
+        : null;
       draftTravelMeta = {
         location: data.location || '',
+        country: data.country || country?.name || '',
+        countryCode: data.country_code || country?.code || '',
         rating: typeof data.rating === 'number' ? data.rating : null,
         reviewCount: data.review_count ?? null,
         description: description || '',
