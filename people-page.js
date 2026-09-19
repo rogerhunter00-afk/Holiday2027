@@ -1,5 +1,5 @@
 (() => {
-  const TRIP_ID = 'holiday2027';
+  const TRIP_ID = '9ec00f2b-9ee5-4bb9-81ab-69f6c7533189';
   const SUPABASE_URL = 'https://bpqmcjbnaukbejznzqwr.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_pxoVfbfSnRRU3nFr-FHzfA_3GOJQxId';
   let peopleClient = null;
@@ -148,34 +148,16 @@
     const userId = session.user.id;
     const avatar = await compressAvatar(me.avatar || '');
 
-    const { error: memberError } = await client.from('trip_members').upsert({
+    // People and the main feed now use the same canonical profile/options tables.
+    // This keeps deleted entries deleted instead of recreating a second contribution row.
+    const { error } = await client.from('profiles').upsert({
       trip_id: TRIP_ID,
       user_id: userId,
-      name: me.name,
-      colour: me.colour || '#DFE7FD',
-      avatar_data: avatar || null,
-      last_seen: new Date().toISOString()
-    }, { onConflict: 'trip_id,user_id' });
-    if (memberError) throw memberError;
-
-    // Keep the shared contribution summary in step with this device's current board entries.
-    await client.from('trip_contributions').delete().eq('trip_id', TRIP_ID).eq('user_id', userId);
-    const mine = localOptions().filter((o) => !o.addedBy || o.addedBy === me.name);
-    if (mine.length) {
-      const rows = mine.map((o) => ({
-        trip_id: TRIP_ID,
-        user_id: userId,
-        option_id: String(o.id),
-        title: o.title || 'Untitled option',
-        type: ['stay','flight','activity'].includes(o.type) ? o.type : 'activity',
-        url: o.url || null,
-        image: o.image || null,
-        source: o.source || null,
-        created_at: o.createdAt ? new Date(o.createdAt).toISOString() : new Date().toISOString()
-      }));
-      const { error } = await client.from('trip_contributions').insert(rows);
-      if (error) throw error;
-    }
+      display_name: me.name,
+      pastel_color: me.colour || '#DFE7FD',
+      avatar_url: avatar || null
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
   }
 
   function iconFor(type) { return type === 'flight' ? '✈' : type === 'stay' ? '⌂' : '☀'; }
@@ -255,13 +237,32 @@
     try {
       await syncMe();
       const { client } = await getClientAndSession();
-      const [{ data: members, error: mErr }, { data: contribs, error: cErr }] = await Promise.all([
-        client.from('trip_members').select('*').eq('trip_id', TRIP_ID).order('joined_at', { ascending: true }),
-        client.from('trip_contributions').select('*').eq('trip_id', TRIP_ID).order('created_at', { ascending: false })
+      const [{ data: profileRows, error: pErr }, { data: optionRows, error: oErr }] = await Promise.all([
+        client.from('profiles').select('user_id,display_name,pastel_color,avatar_url,created_at,role').eq('trip_id', TRIP_ID).order('created_at', { ascending: true }),
+        client.from('options').select('id,added_by,title,option_type,source,source_url,image_url,created_at').eq('trip_id', TRIP_ID).order('created_at', { ascending: false })
       ]);
-      if (mErr) throw mErr;
-      if (cErr) throw cErr;
-      renderPeople(members || [], contribs || []);
+      if (pErr) throw pErr;
+      if (oErr) throw oErr;
+
+      const members = (profileRows || []).map((p) => ({
+        user_id:p.user_id,
+        name:p.display_name,
+        colour:p.pastel_color,
+        avatar_data:p.avatar_url,
+        joined_at:p.created_at,
+        role:p.role || 'member'
+      }));
+      const contribs = (optionRows || []).map((o) => ({
+        user_id:o.added_by,
+        option_id:o.id,
+        title:o.title,
+        type:o.option_type,
+        url:o.source_url,
+        image:o.image_url,
+        source:o.source,
+        created_at:o.created_at
+      }));
+      renderPeople(members, contribs);
     } catch (err) {
       console.warn('People screen sync failed', err);
       renderFallback();
@@ -309,7 +310,7 @@
   document.getElementById('navShort')?.addEventListener('click', closePeople);
   document.getElementById('navAdd')?.addEventListener('click', closePeople);
 
-  // Keep the shared member/contribution summary fresh after joining or adding an option.
+  // Keep the canonical shared profile fresh after joining or adding an option.
   document.getElementById('joinBtn')?.addEventListener('click', () => setTimeout(() => syncMe().catch(() => {}), 180));
   document.getElementById('save')?.addEventListener('click', () => setTimeout(() => syncMe().catch(() => {}), 220));
 
