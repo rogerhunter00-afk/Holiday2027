@@ -180,6 +180,8 @@
       rating: typeof o.rating === 'number' ? o.rating : null,
       review_count: o.reviewCount != null ? Number(o.reviewCount) : null,
       notes: o.note || null,
+      country: o.country || null,
+      country_code: o.countryCode || null,
       parsed_data: cleanPayload(o),
       created_at: o.createdAt ? new Date(o.createdAt).toISOString() : new Date().toISOString()
     };
@@ -221,7 +223,7 @@
     const voted = voteRows.some(v => v.user_id === userId);
     const currency = row.currency || 'GBP';
     const created = row.created_at ? Date.parse(row.created_at) : Date.now();
-    return {
+    const nextRow = {
       ...payload,
       id: row.id,
       type: row.option_type === 'other' ? (payload.type || 'activity') : row.option_type,
@@ -236,6 +238,8 @@
       rating: row.rating != null ? Number(row.rating) : (payload.rating ?? null),
       reviewCount: row.review_count ?? payload.reviewCount ?? null,
       location: payload.location || '',
+      country: row.country || payload.country || '',
+      countryCode: row.country_code || payload.countryCode || '',
       description: payload.description || '',
       image: row.image_url || payload.image || '',
       source: row.source || payload.source || '',
@@ -248,6 +252,8 @@
       _shared: true,
       _sharedBy: row.added_by
     };
+    if (typeof window.holidayEnrichCountry === 'function') window.holidayEnrichCountry(nextRow);
+    return nextRow;
   }
 
   async function loadRemoteBoard({ quiet = false } = {}) {
