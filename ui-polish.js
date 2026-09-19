@@ -154,9 +154,12 @@
     const countryInfo = (o.type==='stay' || o.type==='activity')
       ? ((typeof window.holidayResolveCountry === 'function' ? window.holidayResolveCountry(o) : null) || (typeof window.holidayCountryInfo === 'function' ? window.holidayCountryInfo(o) : null) || fallbackCountryInfo(o))
       : null;
+    const canHaveCountry = o.type==='stay' || o.type==='activity';
     const countryPill = countryInfo
-      ? `<div class="country-pill" aria-label="${esc(countryInfo.name)}"><span class="flag">${countryInfo.flag}</span><span class="name">${esc(countryInfo.name)}</span></div>`
-      : '';
+      ? `<button type="button" class="country-pill country-edit" data-country-edit="${esc(o.id)}" aria-label="Change country from ${esc(countryInfo.name)}"><span class="flag">${countryInfo.flag}</span><span class="name">${esc(countryInfo.name)}</span></button>`
+      : (canHaveCountry
+          ? `<button type="button" class="country-pill country-add" data-country-edit="${esc(o.id)}" aria-label="Add country"><span class="flag">＋</span><span class="name">Add country</span></button>`
+          : '');
     return `<article class="card option" data-id="${esc(o.id)}" data-type="${esc(o.type)}" data-votes="${votes}">
       <div class="photo">
         ${img}
