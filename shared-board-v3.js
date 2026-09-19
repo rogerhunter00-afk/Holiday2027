@@ -10,6 +10,7 @@
   let sb = null;
   let sessionPromise = null;
   let userId = null;
+  let currentUserRole = 'member';
   let realtime = null;
   let applyingRemote = false;
   let pushTimer = null;
@@ -262,7 +263,7 @@
       const [{ data: optionRows, error: optionsError }, { data: voteRows, error: votesError }, { data: profileRows }] = await Promise.all([
         sb.from('options').select('*').eq('trip_id', TRIP_ID).order('created_at', { ascending: false }),
         sb.from('votes').select('option_id,user_id'),
-        sb.from('profiles').select('user_id,display_name,pastel_color,avatar_url').eq('trip_id', TRIP_ID)
+        sb.from('profiles').select('user_id,display_name,pastel_color,avatar_url,role').eq('trip_id', TRIP_ID)
       ]);
       if (optionsError) throw optionsError;
       if (votesError) throw votesError;
@@ -272,6 +273,9 @@
         voteMap.get(v.option_id).push(v);
       }
       const profileMap = new Map((profileRows || []).map(p => [p.user_id, p]));
+      const ownProfile = profileMap.get(userId);
+      currentUserRole = ownProfile?.role || 'member';
+      window.holidayCurrentUserRole = currentUserRole;
       const next = (optionRows || []).map(r => localFromDb(r, voteMap, profileMap));
       for (const row of next) {
         if (!pendingVotes.has(row.id)) continue;
@@ -430,24 +434,34 @@
   async function sharedRemoveOption(id) {
     const o = localOptions().find(x => x.id === id);
     if (!o) return;
-    if (o._sharedBy && o._sharedBy !== userId) {
-      if (typeof toast === 'function') toast('Only the person who added this can remove it');
+    const deletingSomeoneElses = !!(o._sharedBy && o._sharedBy !== userId);
+    const adminDelete = deletingSomeoneElses && currentUserRole === 'admin';
+
+    if (deletingSomeoneElses && !adminDelete) {
+      if (typeof toast === 'function') toast('Only the person who added this or a trip admin can remove it');
       return;
     }
-    if (!confirm(`Remove "${o.title}" from the shared board?`)) return;
+
+    const prompt = adminDelete
+      ? `Admin: remove "${o.title}" added by ${o.addedBy || 'another traveller'} from the shared board?`
+      : `Remove "${o.title}" from the shared board?`;
+    if (!confirm(prompt)) return;
+
     const previous = localOptions();
     const next = previous.filter(x => x.id !== id);
     storeOptions(next);
     applyingRemote = true;
     try { if (typeof render === 'function') render(); } catch {}
     applyingRemote = false;
+
     if (!o._shared) return;
     try {
       await writeShared('delete_option', { option_id:id });
+      if (adminDelete && typeof toast === 'function') toast('Entry removed by admin');
     } catch (error) {
       storeOptions(previous);
       try { if (typeof render === 'function') render(); } catch {}
-      if (typeof toast === 'function') toast('Could not remove that option');
+      if (typeof toast === 'function') toast(error?.message || 'Could not remove that option');
     }
   }
 
