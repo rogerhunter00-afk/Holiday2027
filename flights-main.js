@@ -274,7 +274,7 @@
       retA || retB ? `Return ${retA || '—'}–${retB || '—'}` : '',
       row.airline || '', direct, checkNote
     ].filter(Boolean).join(' · ');
-    const option = {
+    let option = {
       id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`,
       type:'flight',
       url: row.google_flights_url || 'https://www.google.com/travel/flights',
@@ -293,6 +293,7 @@
         price_check:row.price_check || null, nights:nights || null
       }
     };
+    if (typeof window.holidayEnrichCountry === 'function') option = window.holidayEnrichCountry(option);
     options.unshift(option);
     persist();
     render();
