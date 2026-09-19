@@ -52,10 +52,14 @@
     s.textContent=text;s.className='status show'+(kind?' '+kind:'');
   }
   function apply(data,url){
-    const title=data.title&&!/airbnb/i.test(data.title)?data.title:($('nt')?.value||'Airbnb stay');
+    const title=(data.title||'').trim()||($('nt')?.value||'Airbnb stay');
     const image=data.image||'';
-    try{draftImage=image;draftSource='Airbnb';}catch{}
-    if($('nt')&&title)$('nt').value=title;
+    try{
+      if(image) draftImage=image;
+      draftSource='Airbnb';
+      draftTravelMeta={...(draftTravelMeta||{}),location:data.location||draftTravelMeta?.location||''};
+    }catch{}
+    if($('nt')&&title&&(!$('nt').value.trim()||/^Airbnb stay(?:\s*#\d+)?$/i.test($('nt').value.trim())))$('nt').value=title;
     if($('type'))$('type').value='stay';
     if($('prevTitle'))$('prevTitle').textContent=title;
     if($('prevSource'))$('prevSource').textContent='Airbnb'+(data.room_id?' · listing '+data.room_id:'');
@@ -78,11 +82,16 @@
   }
   async function repair(){
     let rows=[];try{rows=typeof options!=='undefined'?options:JSON.parse(localStorage.getItem('holiday2027-options-v2')||'[]')}catch{}
-    const targets=(Array.isArray(rows)?rows:[]).filter(o=>o?.type==='stay'&&!o?.image&&isAirbnb(o?.url||'')).slice(0,3);
+    const targets=(Array.isArray(rows)?rows:[]).filter(o=>o?.type==='stay'&&isAirbnb(o?.url||'')&&(!o?.image||!o?.location)).slice(0,3);
     if(!targets.length)return;
     let changed=false;
     for(const o of targets){
-      try{const d=await readAirbnb(o.url);if(d.image){o.image=d.image;changed=true;}if(d.title&&!/airbnb/i.test(d.title))o.title=d.title;}catch{}
+      try{
+        const d=await readAirbnb(o.url);
+        if(d.image&&!o.image){o.image=d.image;changed=true;}
+        if(d.location&&!o.location){o.location=d.location;changed=true;}
+        if(d.title&&/^Airbnb stay(?:\s*#\d+)?$/i.test(String(o.title||''))){o.title=d.title;changed=true;}
+      }catch{}
     }
     if(changed){
       localStorage.setItem('holiday2027-options-v2',JSON.stringify(rows));
