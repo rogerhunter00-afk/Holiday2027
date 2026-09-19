@@ -39,6 +39,7 @@ jobs:
               p.write_text(s)
 
           inject('index.html', [
+              '<script src="./country-normalizer.js"></script>',
               '<script src="./ui-polish.js"></script>',
               '<script src="./people-page.js"></script>',
               '<script src="./app-shell.js"></script>',
