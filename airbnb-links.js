@@ -64,6 +64,7 @@
       else{$('prevImg').removeAttribute('src');$('prevImg').style.display='none';}
     }
     $('linkPreview')?.classList.add('show');
+    if($('link')) $('link').dataset.airbnbFetchedUrl=url;
     setStatus(image?'Airbnb listing found with property image. Add the booking screenshot for dates and price.':'Airbnb listing found, but no listing image was returned.','ok');
   }
   async function handle(e){
