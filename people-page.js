@@ -15,11 +15,21 @@
     const style = document.createElement('style');
     style.id = 'peoplePageStyles';
     style.textContent = `
-      body.people-open{overflow:hidden}
-      .people-screen{position:fixed;inset:0;z-index:24;background:#fff;overflow:auto;overscroll-behavior:contain;display:none;padding-bottom:calc(96px + env(safe-area-inset-bottom));}
+      html.people-open-root,body.people-open{overflow:hidden!important;overscroll-behavior:none}
+      body.people-open{width:100%;max-width:100%;touch-action:pan-y}
+      .people-screen{
+        position:fixed;inset:0;z-index:24;background:#fff;
+        overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+        overscroll-behavior-y:contain;overscroll-behavior-x:none;
+        touch-action:pan-y;width:100%;max-width:100vw;
+        display:none;padding-bottom:calc(96px + env(safe-area-inset-bottom));
+      }
       .people-screen.open{display:block;animation:peopleIn .18s ease-out}
       @keyframes peopleIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-      .people-page{max-width:760px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 18px 28px}
+      .people-page{width:100%;max-width:760px;min-width:0;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 18px 28px;overflow-x:hidden}
+      .people-page *{min-width:0}
+      .people-page img{max-width:100%}
+      .people-top,.people-hero,.people-list,.person-card,.person-contribs,.contribution{max-width:100%}
       .people-top{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:2;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);padding:4px 0 14px}
       .people-back{width:42px;height:42px;border-radius:50%;border:1px solid #e8e8e8;background:#fff;display:grid;place-items:center;font-size:22px;color:#333;flex:0 0 auto}
       .people-top h1{margin:0;font-size:26px;letter-spacing:-.8px}.people-top p{margin:2px 0 0;color:#888;font-size:12px}
@@ -273,6 +283,7 @@
   function openPeople() {
     buildScreen();
     document.getElementById('peopleScreen')?.classList.add('open');
+    document.documentElement.classList.add('people-open-root');
     document.body.classList.add('people-open');
     setNavPeople(true);
     refreshPeople();
@@ -280,6 +291,7 @@
 
   function closePeople() {
     document.getElementById('peopleScreen')?.classList.remove('open');
+    document.documentElement.classList.remove('people-open-root');
     document.body.classList.remove('people-open');
     setNavPeople(false);
   }
