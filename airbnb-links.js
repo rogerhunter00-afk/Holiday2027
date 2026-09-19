@@ -57,7 +57,8 @@
     try{
       if(image) draftImage=image;
       draftSource='Airbnb';
-      draftTravelMeta={...(draftTravelMeta||{}),location:data.location||draftTravelMeta?.location||''};
+      const country=typeof window.holidayResolveCountry==='function'?window.holidayResolveCountry({country:data.country,countryCode:data.country_code,location:data.location,title:data.title}):null;
+      draftTravelMeta={...(draftTravelMeta||{}),location:data.location||draftTravelMeta?.location||'',country:data.country||country?.name||draftTravelMeta?.country||'',countryCode:data.country_code||country?.code||draftTravelMeta?.countryCode||''};
     }catch{}
     if($('nt')&&title&&(!$('nt').value.trim()||/^Airbnb stay(?:\s*#\d+)?$/i.test($('nt').value.trim())))$('nt').value=title;
     if($('type'))$('type').value='stay';
@@ -90,6 +91,8 @@
         const d=await readAirbnb(o.url);
         if(d.image&&!o.image){o.image=d.image;changed=true;}
         if(d.location&&!o.location){o.location=d.location;changed=true;}
+        const country=typeof window.holidayResolveCountry==='function'?window.holidayResolveCountry({country:d.country,countryCode:d.country_code,location:d.location,title:d.title,...o}):null;
+        if(country&&(!o.country||!o.countryCode)){o.country=country.name;o.countryCode=country.code;changed=true;}
         if(d.title&&/^Airbnb stay(?:\s*#\d+)?$/i.test(String(o.title||''))){o.title=d.title;changed=true;}
       }catch{}
     }
