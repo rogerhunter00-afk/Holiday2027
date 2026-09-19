@@ -40,6 +40,10 @@
   };
   function flag(code){return code.replace(/[A-Z]/g,c=>String.fromCodePoint(127397+c.charCodeAt()))}
   function countryInfo(o){
+    if(typeof window.holidayResolveCountry==='function'){
+      const hit=window.holidayResolveCountry(o);
+      if(hit)return hit;
+    }
     const t=[o.location,o.title,o.description,o.note].filter(Boolean).join(' ').toLowerCase();
     for(const [name,[code,keys]] of Object.entries(COUNTRIES)){if(keys.some(k=>t.includes(k)))return{name,code,flag:flag(code)}}
     return null;
@@ -49,8 +53,8 @@
     if(document.getElementById('locationShortlistStyles'))return;
     const s=document.createElement('style');s.id='locationShortlistStyles';
     s.textContent=[
-      '.country-pill{position:absolute;right:12px;bottom:12px;z-index:3;min-height:40px;padding:0 13px;border-radius:999px;background:rgba(255,255,255,.96);box-shadow:0 4px 18px #00000014;display:flex;align-items:center;gap:7px;color:#333;font-size:12px;font-weight:850;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}',
-      '.country-pill .flag{font-size:19px;line-height:1}.country-pill .name{white-space:nowrap}',
+      '.country-pill{position:absolute;right:12px;bottom:12px;z-index:3;min-height:40px;padding:0 13px;border:0;border-radius:999px;background:rgba(255,255,255,.96);box-shadow:0 4px 18px #00000014;display:flex;align-items:center;gap:7px;color:#333;font-size:12px;font-weight:850;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}',
+      '.country-pill .flag{font-size:19px;line-height:1}.country-pill .name{white-space:nowrap}.country-pill:active{transform:scale(.96)}.country-add{color:#777}.country-add .flag{font-size:17px}',
       '.shortlist-quick{display:none;margin:-2px 0 18px;border:1px solid #ececec;border-radius:22px;background:linear-gradient(180deg,#fff,#fffafb);overflow:hidden}.shortlist-quick.show{display:block}',
       '.shortlist-quick-head{padding:14px 15px 10px}.shortlist-quick-head b{display:block;font-size:14px}.shortlist-quick-head span{display:block;margin-top:2px;color:#888;font-size:10px}',
       '.shortlist-quick-list{padding:0 8px 8px}.shortlist-quick-row{width:100%;border:0;background:#fff;border-top:1px solid #f0f0f0;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:9px;align-items:center;padding:10px 7px;text-align:left;color:#222}',
@@ -61,15 +65,7 @@
     ].join('');document.head.appendChild(s);
   }
   function rows(){try{return typeof options!=='undefined'&&Array.isArray(options)?options:JSON.parse(localStorage.getItem('holiday2027-options-v2')||'[]')}catch{return[]}}
-  function pills(){
-    const m=new Map(rows().map(o=>[String(o.id),o]));
-    document.querySelectorAll('.card.option[data-id]').forEach(card=>{
-      const o=m.get(String(card.dataset.id)),photo=card.querySelector('.photo');if(!o||!photo)return;
-      const old=photo.querySelector('.country-pill'),c=(o.type==='stay'||o.type==='activity')?countryInfo(o):null;
-      if(!c){old?.remove();return}const html='<span class="flag">'+c.flag+'</span><span class="name">'+c.name+'</span>';
-      if(old){old.innerHTML=html}else{const p=document.createElement('div');p.className='country-pill';p.innerHTML=html;photo.appendChild(p)}
-    });
-  }
+  function pills(){ /* Country controls are rendered directly by ui-polish.js. */ }
   function summaryBox(){let e=document.getElementById('shortlistQuick');if(e)return e;const g=document.getElementById('grid');if(!g)return null;e=document.createElement('section');e.id='shortlistQuick';e.className='shortlist-quick';g.parentNode.insertBefore(e,g);return e}
   function summary(){
     const e=summaryBox();if(!e)return;let f='all';try{f=currentFilter}catch{}
