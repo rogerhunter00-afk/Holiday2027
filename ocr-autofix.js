@@ -133,7 +133,7 @@
   }
 
   function isGenericTitle(title = '') {
-    return !title || /^Airbnb stay #/i.test(title) || /^Airbnb:/i.test(title) || /holiday rentals|vacation rentals|cabins, beach houses/i.test(title);
+    return !title || /^Airbnb stay(?:\s*#\d+)?$/i.test(title) || /^Airbnb:/i.test(title) || /holiday rentals|vacation rentals|cabins, beach houses/i.test(title);
   }
 
   function monthNum(name = '') {
@@ -397,6 +397,60 @@
     return payload;
   }
 
+  function applyAirbnbLinkData(d, { quiet = false } = {}) {
+    if (!d) return;
+    const title = d.title || `Airbnb stay #${d.room_id || ''}`.trim();
+    const image = d.image || '';
+
+    // Link fetch owns the property image/source. The screenshot may later replace
+    // the title because it is the more specific booking view the user selected.
+    try {
+      if (image) draftImage = image;
+      draftSource = 'Airbnb';
+    } catch {}
+
+    if ($('nt') && (!$('nt').value.trim() || isGenericTitle($('nt').value.trim()))) $('nt').value = title;
+    if ($('type')) $('type').value = 'stay';
+    if ($('prevTitle')) $('prevTitle').textContent = title;
+    if ($('prevSource')) $('prevSource').textContent = `Airbnb · listing ${d.room_id || ''}`;
+    if ($('prevImg')) {
+      if (image) {
+        $('prevImg').src = image;
+        $('prevImg').style.display = 'block';
+      } else if (!draftImage) {
+        $('prevImg').removeAttribute('src');
+        $('prevImg').style.display = 'none';
+      }
+    }
+    $('linkPreview')?.classList.add('show');
+
+    const link = $('link');
+    if (link) link.dataset.airbnbFetchedUrl = link.value.trim();
+
+    if (!quiet && typeof setStatus === 'function') {
+      setStatus(image ? 'Airbnb listing found with property image.' : 'Airbnb listing found.', 'ok');
+      const status = $('status');
+      if (status) {
+        status.innerHTML = `<span class="hv-link-ok">Listing found</span><div style="margin-top:5px;color:#47705a">Airbnb property details${image ? ' and image' : ''} loaded${d.elapsed_ms ? ` in ${d.elapsed_ms} ms` : ''}.</div>`;
+      }
+    }
+  }
+
+  async function ensureAirbnbLinkFetched({ quiet = true } = {}) {
+    const url = $('link')?.value.trim() || '';
+    if (!isAirbnbUrl(url)) return null;
+
+    const link = $('link');
+    const alreadyFetched = link?.dataset.airbnbFetchedUrl === url && !!draftImage;
+    if (alreadyFetched) return null;
+
+    const d = await fetchAirbnbDirect(url);
+    applyAirbnbLinkData(d, { quiet });
+    return d;
+  }
+
+  window.holidayEnsureAirbnbLinkFetched = ensureAirbnbLinkFetched;
+
   async function tidyFetchPreview(event) {
     event?.preventDefault?.();
     const url = $('link')?.value.trim() || '';
@@ -416,26 +470,7 @@
 
     try {
       const d = await fetchAirbnbDirect(url);
-      const title = d.title || `Airbnb stay #${d.room_id}`;
-      const image = d.image || '';
-
-      if ($('nt')) $('nt').value = title;
-      if ($('type')) $('type').value = 'stay';
-      if ($('prevTitle')) $('prevTitle').textContent = title;
-      if ($('prevSource')) $('prevSource').textContent = `Airbnb · listing ${d.room_id}`;
-      if ($('prevImg')) {
-        if (image) { $('prevImg').src = image; $('prevImg').style.display = 'block'; }
-        else { $('prevImg').removeAttribute('src'); $('prevImg').style.display = 'none'; }
-      }
-      $('linkPreview')?.classList.add('show');
-
-      try { draftImage = image; draftSource = 'Airbnb'; } catch (_) {}
-
-      if (typeof setStatus === 'function') {
-        setStatus('Airbnb listing found.', 'ok');
-        const status = $('status');
-        if (status) status.innerHTML = `<span class="hv-link-ok">Listing found</span><div style="margin-top:5px;color:#47705a">Real Airbnb title and property photo loaded${d.elapsed_ms ? ` in ${d.elapsed_ms} ms` : ''}.</div>`;
-      }
+      applyAirbnbLinkData(d, { quiet: false });
     } catch (err) {
       if (typeof setStatus === 'function') setStatus(`Could not automatically read this Airbnb listing. You can still fill the details manually. ${err.message}`, 'err');
     } finally {
@@ -458,7 +493,10 @@
   function fillForm(data) {
     if (!data) return;
     if (data.item_type && ['stay','flight','activity'].includes(data.item_type) && $('type')) $('type').value = data.item_type;
-    if (data.title && $('nt') && isGenericTitle($('nt').value.trim())) $('nt').value = data.title;
+    if (data.title && $('nt')) {
+      const currentUrl = $('link')?.value.trim() || '';
+      if (isAirbnbUrl(currentUrl) || isGenericTitle($('nt').value.trim())) $('nt').value = data.title;
+    }
     if (data.date_text && $('nd')) $('nd').value = data.date_text;
     if ($('ng')) {
       if (data.guests_text) $('ng').value = data.guests_text;
@@ -530,6 +568,15 @@
     setProgress(12, true);
 
     try {
+      const currentUrl = $('link')?.value.trim() || '';
+      const shouldFetchAirbnb = isAirbnbUrl(currentUrl) && (!draftImage || $('link')?.dataset.airbnbFetchedUrl !== currentUrl);
+      const airbnbFetchPromise = shouldFetchAirbnb
+        ? ensureAirbnbLinkFetched({ quiet: true }).catch(err => {
+            console.warn('Automatic Airbnb fetch during screenshot parse failed', err);
+            return null;
+          })
+        : Promise.resolve(null);
+
       const session = await getSession();
       setProgress(35, true);
       const body = new FormData();
@@ -545,6 +592,10 @@
       setProgress(82, true);
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || `Screenshot parser returned ${response.status}`);
+
+      // Finish the listing fetch first so its image/source is retained, then let
+      // Gemini populate the booking-specific title/dates/price last.
+      await airbnbFetchPromise;
       fillForm(payload.data);
       setProgress(100, true);
     } catch (err) {
