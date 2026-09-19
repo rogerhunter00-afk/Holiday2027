@@ -78,6 +78,9 @@
     input.country=hit.name; input.countryCode=hit.code;
     return input;
   }
+  window.holidayCountryList=countryNames
+    .map(x=>({...x,flag:flag(x.code)}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
   window.holidayResolveCountry=resolve;
   window.holidayEnrichCountry=enrich;
 })();
