@@ -72,7 +72,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
 <main class="app">
 <header class="top">
   <div class="head">
-    <div class="brand"><h1>Holiday 2027</h1><p>May 2027 · shared trip board</p></div>
+    <div class="brand"><h1>Holiday 2027</h1><p>May 2027 · ~10 guests · 7 bedrooms preferred</p></div>
     <button class="round" id="profile" aria-label="Reset profile">☺</button>
   </div>
   <div class="people">
@@ -152,136 +152,163 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
 const STORE_PROFILE='holiday2027-profile-v2';
 const STORE_OPTIONS='holiday2027-options-v2';
 const colours=['#FDE2E4','#FAD2E1','#E2ECE9','#BEE1E6','#DFE7FD','#E2EAFC','#CDEAC0','#FFF1E6','#FCF6BD','#E4C1F9','#D8E2DC','#FFE5D9','#DDE5B6','#CFE8EF'];
-const STORE_SEED='holiday2027-portugal-stays-v1';
+const STORE_SEED='holiday2027-portugal-large-stays-v2';
+const LEGACY_SEED_IDS=["seed-albufeira-strip-airbnb","seed-oura-villa2-vrbo","seed-villa-paula-booking","seed-rosa-old-town-airbnb","seed-gale-luxury-airbnb","seed-villa-verde-airbnb"];
 const SEEDED_OPTIONS=[
   {
-    "id": "seed-albufeira-strip-airbnb",
+    "id": "seed-large-legeado",
     "type": "stay",
-    "url": "https://www.airbnb.com/rooms/1079666223860516316",
-    "title": "Private Pool Villa · Walk to Beach & Strip",
-    "guests": "9 guests · 4 bedrooms · 7 beds · 3 baths",
-    "price": "",
-    "perPerson": "",
-    "note": "Private pool · BBQ · Strip 5–7 min walk · beach about 15 min walk · supermarket opposite",
-    "image": "https://a0.muscache.com/im/pictures/hosting/Hosting-1079666223860516316/original/77c1d809-ef5d-4d9d-90f4-8fc22ef76860.png?im_w=1200",
-    "source": "Airbnb",
-    "location": "Albufeira · Oura / The Strip",
-    "ratingText": "4.83/5 · 18 reviews",
+    "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/277854/",
+    "title": "Villa Legeado · 7 Bedrooms · Near the Strip",
+    "guests": "~10 guests · 7 bedrooms · 9 bathrooms · sleeps up to 17",
+    "price": "£2,772–£7,534 / week",
+    "perPerson": "≈£277–£753 pp for 10",
+    "note": "PUBLISHED RANGE · private pool · games room + bar · Strip about 10 min walk · beach/Old Town walkable · optional pool heating",
+    "image": "https://assets.simplyowners.net/properties/277854/tr:n-img_1024/277854_11972418.jpg",
+    "source": "Simply Owners",
+    "location": "Albufeira · Areias de São João",
+    "ratingText": "11 direct-owner reviews",
+    "availabilityText": "May 2027: exact week needed to confirm with owner",
     "addedBy": "Portugal research",
     "colour": "#FDE2E4",
     "avatar": "",
     "votes": 0,
     "voted": false,
-    "createdAt": 1790452000001
+    "createdAt": 1790456000001
   },
   {
-    "id": "seed-oura-villa2-vrbo",
+    "id": "seed-large-flores",
     "type": "stay",
-    "url": "https://www.vrbo.com/en-gb/p10589229",
-    "title": "Villa 2 · Oura Beach",
-    "guests": "7 guests · 3 bedrooms · 3 bathrooms",
-    "price": "",
-    "perPerson": "",
-    "note": "Private pool · The Strip 5 min walk · Oura Beach about 12 min walk · no car needed",
-    "image": "https://media.vrbo.com/lodging/49000000/48250000/48241800/48241758/97ff963f_edited_92a1.jpg?impolicy=resizecrop&rw=598&ra=fit",
-    "source": "Vrbo",
-    "location": "Albufeira · Oura",
-    "ratingText": "9.4/10",
+    "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/226869/",
+    "title": "Villa Flores · 7 Bedrooms + Sofa Bed",
+    "guests": "~10 guests · 7 bedrooms · 6 bathrooms · sleeps up to 18",
+    "price": "£3,780–£9,720 / week",
+    "perPerson": "≈£378–£972 pp for 10",
+    "note": "PUBLISHED RANGE · large private pool · games/snooker · extra sofa bed · 5 min Uber to Albufeira/Olhos d’Água · optional 8th bedroom",
+    "image": "https://assets.simplyowners.net/properties/226869/tr:n-img_1024/226869_12041193.jpg",
+    "source": "Simply Owners",
+    "location": "Albufeira · between town and Olhos d’Água",
+    "ratingText": "11 direct-owner reviews",
+    "availabilityText": "May 2027: exact week needed to confirm with owner",
     "addedBy": "Portugal research",
     "colour": "#E2ECE9",
     "avatar": "",
     "votes": 0,
     "voted": false,
-    "createdAt": 1790452000002
+    "createdAt": 1790456000002
   },
   {
-    "id": "seed-villa-paula-booking",
+    "id": "seed-large-monte-poupa",
     "type": "stay",
-    "url": "https://www.booking.com/hotel/pt/villa-paula-with-private-pool-close-to-the-beach-and-strip.en-gb.html",
-    "title": "Villa Paula · Private Pool Close to Beach & Strip",
-    "guests": "Sleeps up to 9 · 4 bedrooms · 3 bathrooms",
-    "price": "",
-    "perPerson": "",
-    "note": "Private pool · guests report about 10–12 min walk to The Strip · Santa Eulália Beach about 1.2 miles",
-    "image": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/856378962.jpg?k=24b838eecf69aa6e78b2d54b97bf3351e891867ea1b124f5f3e803e66f8f6ee1&o=",
-    "source": "Booking.com",
-    "location": "Albufeira · Santa Eulália / Strip",
-    "ratingText": "Location 10/10",
+    "url": "https://premiervillas.net/portugal/algarve/albufeira/monte-da-poupa",
+    "title": "Monte da Poupa · 7 En-Suite Bedrooms",
+    "guests": "~10 guests · 7 en-suite bedrooms · sleeps up to 15",
+    "price": "from £2,795 / week",
+    "perPerson": "from ≈£280 pp for 10",
+    "note": "PUBLISHED FROM-PRICE · 14m private pool · outdoor kitchen · games room · around 10 min drive to Albufeira and beaches",
+    "image": "https://res.cloudinary.com/premiervillas/image/upload/t_MainWebsiteView/s3media/villa_media/67_2025-05-30-10-14-37_683976fd0cbb7.jpg",
+    "source": "Premier Villas",
+    "location": "Guia · Albufeira",
+    "ratingText": "",
+    "availabilityText": "Availability shown by supplier is subject to confirmation",
     "addedBy": "Portugal research",
     "colour": "#DFE7FD",
     "avatar": "",
     "votes": 0,
     "voted": false,
-    "createdAt": 1790452000003
+    "createdAt": 1790456000003
   },
   {
-    "id": "seed-rosa-old-town-airbnb",
+    "id": "seed-large-candeias",
     "type": "stay",
-    "url": "https://www.airbnb.co.uk/rooms/23698070",
-    "title": "Apartamento “Rosa” · Beach Old Town",
-    "guests": "7 guests · 3 bedrooms · 5 beds · 2 bathrooms",
-    "price": "",
-    "perPerson": "",
-    "note": "Pool · very close to Peneco Beach and Old Town bars/restaurants · parking · minimum booking age 28",
-    "image": "https://a0.muscache.com/im/pictures/f84ea2ab-1ee6-40d4-b073-f4c9012e7cee.jpg?im_w=1200",
-    "source": "Airbnb",
-    "location": "Albufeira · Old Town / Peneco Beach",
-    "ratingText": "4.88/5 · 80 reviews",
+    "url": "https://www.solmarvillas.com/destinations/portugal-villas/algarve/gale/villa-candeias",
+    "title": "Villa Candeias · 7 Bedrooms · Walk to Beach",
+    "guests": "~10 guests · 7 bedrooms · 8 bathrooms · sleeps 14",
+    "price": "≈£3,000–£4,000 / week est.",
+    "perPerson": "≈£300–£400 pp for 10",
+    "note": "ESTIMATE · private/heatable pool · pool table · restaurants/shops walkable · Manuel Lourenço beach a short walk · excellent bedroom/bathroom ratio",
+    "image": "https://www.solmarvillas.com/sites/default/files/styles/villa_main/public/Villa%20Candeias%20-%20Algarve-1001.jpg.webp?itok=T8jlfefv",
+    "source": "Solmar Villas",
+    "location": "Galé · Albufeira",
+    "ratingText": "10/10 on Vrbo",
+    "availabilityText": "May 2027: exact week needed for live Solmar price",
     "addedBy": "Portugal research",
     "colour": "#FFF1E6",
     "avatar": "",
     "votes": 0,
     "voted": false,
-    "createdAt": 1790452000004
+    "createdAt": 1790456000004
   },
   {
-    "id": "seed-gale-luxury-airbnb",
+    "id": "seed-large-heated-jacuzzi",
     "type": "stay",
-    "url": "https://www.airbnb.co.uk/rooms/46356657",
-    "title": "Stunning Luxury Villa · Private Pool · Galé",
-    "guests": "7 guests · 3 bedrooms · 6 beds · 2.5 bathrooms",
-    "price": "",
-    "perPerson": "",
-    "note": "Private pool · quiet Vale de Parra setting · about 5 min drive to Praia da Galé · restaurants and bars nearby",
-    "image": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/338468641.jpg?k=c34aae82b09ff81d99d48811a06a835e96908f40958237ba030f023d91261d35&o=",
-    "source": "Airbnb",
-    "location": "Galé / Vale de Parra",
-    "ratingText": "4.89/5 · 73 reviews",
+    "url": "https://www.vrbo.com/en-gb/p8122879",
+    "title": "7+1 Bedroom Villa · Heated Pool + Jacuzzi",
+    "guests": "~10 guests · 8 bedrooms · up to 16 guests",
+    "price": "≈£3,000–£5,000 / week est.",
+    "perPerson": "≈£300–£500 pp for 10",
+    "note": "ESTIMATE · private pool · Jacuzzi · gym · snooker + table tennis · The Strip about 15 min walk · optional pool heating €500/week",
+    "image": "https://media.vrbo.com/lodging/34000000/33700000/33698200/33698190/2d1fa925.jpg?impolicy=resizecrop&rw=598&ra=fit",
+    "source": "Vrbo",
+    "location": "Central Albufeira · near The Strip",
+    "ratingText": "9.4/10",
+    "availabilityText": "May 2027: live price/availability requires exact dates",
     "addedBy": "Portugal research",
     "colour": "#FCF6BD",
     "avatar": "",
     "votes": 0,
     "voted": false,
-    "createdAt": 1790452000005
+    "createdAt": 1790456000005
   },
   {
-    "id": "seed-villa-verde-airbnb",
+    "id": "seed-large-villa-bella",
     "type": "stay",
-    "url": "https://www.airbnb.co.uk/rooms/1089097886059282160",
-    "title": "Villa Verde · Private Pool Near the Beach",
-    "guests": "7 guests · 4 bedrooms · 4 beds · 3 bathrooms",
-    "price": "",
-    "perPerson": "",
-    "note": "Private pool · BBQ · around 10 min walk to Manuel Lourenço Beach · EV charging · quiet Galé residential area",
-    "image": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/527917091.jpg?k=b2ac8c75905f4ef4c5eede86b349ab9d8037c56fdc45e0f66f59789f96d00c86&o=",
-    "source": "Airbnb",
-    "location": "Galé · Manuel Lourenço Beach",
-    "ratingText": "4.75/5 · 8 reviews",
+    "url": "https://www.vrbo.com/en-gb/p452980",
+    "title": "Villa Bella · 8 Bedrooms · Beach + Strip",
+    "guests": "~10 guests · 8 bedrooms · large-group villa",
+    "price": "≈£3,500–£5,500 / week est.",
+    "perPerson": "≈£350–£550 pp for 10",
+    "note": "ESTIMATE · private pool · Praia dos Alemães about 3 min walk · The Strip about 11 min walk · Oura Beach about 15 min walk",
+    "image": "https://media.vrbo.com/lodging/34000000/33610000/33608700/33608686/1db6ea7d.jpg?impolicy=resizecrop&rw=598&ra=fit",
+    "source": "Vrbo",
+    "location": "Albufeira · Praia dos Alemães / Strip",
+    "ratingText": "9.2/10",
+    "availabilityText": "May 2027: live price/availability requires exact dates",
     "addedBy": "Portugal research",
     "colour": "#CDEAC0",
     "avatar": "",
     "votes": 0,
     "voted": false,
-    "createdAt": 1790452000006
+    "createdAt": 1790456000006
+  },
+  {
+    "id": "seed-fallback-emilie",
+    "type": "stay",
+    "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/293921/",
+    "title": "Fallback · Villa Emilie · 6 Bedrooms + Sofa Bed",
+    "guests": "~10 guests · 6 bedrooms + sofa bed · up to 13",
+    "price": "≈£2,500–£3,200 / week est.",
+    "perPerson": "≈£250–£320 pp for 10",
+    "note": "FALLBACK ONLY · listing confirms 6 bedrooms + lounge sofa bed and 2-min walk to Strip. Published £1,470–£1,595 rate is for the 3-bedroom section only; full 6-bed setup needs owner quote.",
+    "image": "https://assets.simplyowners.net/properties/293921/tr:n-img_1024/293921_11987031.jpg",
+    "source": "Simply Owners",
+    "location": "Albufeira · Praia da Oura / The Strip",
+    "ratingText": "7 direct-owner reviews",
+    "availabilityText": "May 2027: full 6-bed configuration needs owner confirmation",
+    "addedBy": "Portugal research",
+    "colour": "#E4C1F9",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790456000007
   }
 ];
-
 let profile=JSON.parse(localStorage.getItem(STORE_PROFILE)||'null');
 let options=JSON.parse(localStorage.getItem(STORE_OPTIONS)||'[]');
 if(!localStorage.getItem(STORE_SEED)){
-  const seedIds=new Set(SEEDED_OPTIONS.map(o=>o.id));
-  const seedUrls=new Set(SEEDED_OPTIONS.map(o=>o.url));
-  options=[...SEEDED_OPTIONS,...options.filter(o=>!seedIds.has(o.id)&&!seedUrls.has(o.url))];
+  const removeIds=new Set([...LEGACY_SEED_IDS,...SEEDED_OPTIONS.map(o=>o.id)]);
+  const newUrls=new Set(SEEDED_OPTIONS.map(o=>o.url));
+  options=[...SEEDED_OPTIONS,...options.filter(o=>!removeIds.has(o.id)&&!newUrls.has(o.url))];
   localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
   localStorage.setItem(STORE_SEED,'1');
 }
@@ -334,6 +361,7 @@ function card(o){
       ${o.location?`<p class="factsline">📍 ${esc(o.location)}</p>`:''}
       ${o.ratingText?`<p class="factsline">★ ${esc(o.ratingText)}</p>`:(o.rating!=null?`<p class="factsline">★ ${esc(o.rating)}${o.reviewCount?' · '+esc(o.reviewCount)+' reviews':''}</p>`:'')}
       ${o.perPerson?`<p class="factsline pp">${esc(o.perPerson)}</p>`:''}
+      ${o.availabilityText?`<p class="factsline">◷ ${esc(o.availabilityText)}</p>`:''}
       ${o.cancellation?`<p class="factsline">✓ ${esc(o.cancellation)}</p>`:''}
       ${o.note?`<p class="sub">${esc(o.note)}</p>`:''}
       <a class="openlink" href="${esc(o.url)}" target="_blank" rel="noopener">Open original ↗</a>
