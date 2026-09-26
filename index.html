@@ -152,9 +152,139 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
 const STORE_PROFILE='holiday2027-profile-v2';
 const STORE_OPTIONS='holiday2027-options-v2';
 const colours=['#FDE2E4','#FAD2E1','#E2ECE9','#BEE1E6','#DFE7FD','#E2EAFC','#CDEAC0','#FFF1E6','#FCF6BD','#E4C1F9','#D8E2DC','#FFE5D9','#DDE5B6','#CFE8EF'];
+const STORE_SEED='holiday2027-portugal-stays-v1';
+const SEEDED_OPTIONS=[
+  {
+    "id": "seed-albufeira-strip-airbnb",
+    "type": "stay",
+    "url": "https://www.airbnb.com/rooms/1079666223860516316",
+    "title": "Private Pool Villa · Walk to Beach & Strip",
+    "guests": "9 guests · 4 bedrooms · 7 beds · 3 baths",
+    "price": "",
+    "perPerson": "",
+    "note": "Private pool · BBQ · Strip 5–7 min walk · beach about 15 min walk · supermarket opposite",
+    "image": "https://a0.muscache.com/im/pictures/hosting/Hosting-1079666223860516316/original/77c1d809-ef5d-4d9d-90f4-8fc22ef76860.png?im_w=1200",
+    "source": "Airbnb",
+    "location": "Albufeira · Oura / The Strip",
+    "ratingText": "4.83/5 · 18 reviews",
+    "addedBy": "Portugal research",
+    "colour": "#FDE2E4",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790452000001
+  },
+  {
+    "id": "seed-oura-villa2-vrbo",
+    "type": "stay",
+    "url": "https://www.vrbo.com/en-gb/p10589229",
+    "title": "Villa 2 · Oura Beach",
+    "guests": "7 guests · 3 bedrooms · 3 bathrooms",
+    "price": "",
+    "perPerson": "",
+    "note": "Private pool · The Strip 5 min walk · Oura Beach about 12 min walk · no car needed",
+    "image": "https://media.vrbo.com/lodging/49000000/48250000/48241800/48241758/97ff963f_edited_92a1.jpg?impolicy=resizecrop&rw=598&ra=fit",
+    "source": "Vrbo",
+    "location": "Albufeira · Oura",
+    "ratingText": "9.4/10",
+    "addedBy": "Portugal research",
+    "colour": "#E2ECE9",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790452000002
+  },
+  {
+    "id": "seed-villa-paula-booking",
+    "type": "stay",
+    "url": "https://www.booking.com/hotel/pt/villa-paula-with-private-pool-close-to-the-beach-and-strip.en-gb.html",
+    "title": "Villa Paula · Private Pool Close to Beach & Strip",
+    "guests": "Sleeps up to 9 · 4 bedrooms · 3 bathrooms",
+    "price": "",
+    "perPerson": "",
+    "note": "Private pool · guests report about 10–12 min walk to The Strip · Santa Eulália Beach about 1.2 miles",
+    "image": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/856378962.jpg?k=24b838eecf69aa6e78b2d54b97bf3351e891867ea1b124f5f3e803e66f8f6ee1&o=",
+    "source": "Booking.com",
+    "location": "Albufeira · Santa Eulália / Strip",
+    "ratingText": "Location 10/10",
+    "addedBy": "Portugal research",
+    "colour": "#DFE7FD",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790452000003
+  },
+  {
+    "id": "seed-rosa-old-town-airbnb",
+    "type": "stay",
+    "url": "https://www.airbnb.co.uk/rooms/23698070",
+    "title": "Apartamento “Rosa” · Beach Old Town",
+    "guests": "7 guests · 3 bedrooms · 5 beds · 2 bathrooms",
+    "price": "",
+    "perPerson": "",
+    "note": "Pool · very close to Peneco Beach and Old Town bars/restaurants · parking · minimum booking age 28",
+    "image": "https://a0.muscache.com/im/pictures/f84ea2ab-1ee6-40d4-b073-f4c9012e7cee.jpg?im_w=1200",
+    "source": "Airbnb",
+    "location": "Albufeira · Old Town / Peneco Beach",
+    "ratingText": "4.88/5 · 80 reviews",
+    "addedBy": "Portugal research",
+    "colour": "#FFF1E6",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790452000004
+  },
+  {
+    "id": "seed-gale-luxury-airbnb",
+    "type": "stay",
+    "url": "https://www.airbnb.co.uk/rooms/46356657",
+    "title": "Stunning Luxury Villa · Private Pool · Galé",
+    "guests": "7 guests · 3 bedrooms · 6 beds · 2.5 bathrooms",
+    "price": "",
+    "perPerson": "",
+    "note": "Private pool · quiet Vale de Parra setting · about 5 min drive to Praia da Galé · restaurants and bars nearby",
+    "image": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/338468641.jpg?k=c34aae82b09ff81d99d48811a06a835e96908f40958237ba030f023d91261d35&o=",
+    "source": "Airbnb",
+    "location": "Galé / Vale de Parra",
+    "ratingText": "4.89/5 · 73 reviews",
+    "addedBy": "Portugal research",
+    "colour": "#FCF6BD",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790452000005
+  },
+  {
+    "id": "seed-villa-verde-airbnb",
+    "type": "stay",
+    "url": "https://www.airbnb.co.uk/rooms/1089097886059282160",
+    "title": "Villa Verde · Private Pool Near the Beach",
+    "guests": "7 guests · 4 bedrooms · 4 beds · 3 bathrooms",
+    "price": "",
+    "perPerson": "",
+    "note": "Private pool · BBQ · around 10 min walk to Manuel Lourenço Beach · EV charging · quiet Galé residential area",
+    "image": "https://cf.bstatic.com/xdata/images/hotel/max1024x768/527917091.jpg?k=b2ac8c75905f4ef4c5eede86b349ab9d8037c56fdc45e0f66f59789f96d00c86&o=",
+    "source": "Airbnb",
+    "location": "Galé · Manuel Lourenço Beach",
+    "ratingText": "4.75/5 · 8 reviews",
+    "addedBy": "Portugal research",
+    "colour": "#CDEAC0",
+    "avatar": "",
+    "votes": 0,
+    "voted": false,
+    "createdAt": 1790452000006
+  }
+];
 
 let profile=JSON.parse(localStorage.getItem(STORE_PROFILE)||'null');
 let options=JSON.parse(localStorage.getItem(STORE_OPTIONS)||'[]');
+if(!localStorage.getItem(STORE_SEED)){
+  const seedIds=new Set(SEEDED_OPTIONS.map(o=>o.id));
+  const seedUrls=new Set(SEEDED_OPTIONS.map(o=>o.url));
+  options=[...SEEDED_OPTIONS,...options.filter(o=>!seedIds.has(o.id)&&!seedUrls.has(o.url))];
+  localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
+  localStorage.setItem(STORE_SEED,'1');
+}
 let draftImage='', draftSource='', draftTravelMeta={}, currentFilter='all', screenshotFile=null, screenshotUrl='';
 
 const $=id=>document.getElementById(id);
@@ -201,6 +331,8 @@ function card(o){
     <div class="body">
       <div class="row"><h3>${esc(o.title||'Untitled option')}</h3><span class="price">${esc(o.price||'')}</span></div>
       ${(o.dates||o.guests)?`<p class="factsline">${[o.dates,o.guests].filter(Boolean).map(esc).join(' · ')}</p>`:''}
+      ${o.location?`<p class="factsline">📍 ${esc(o.location)}</p>`:''}
+      ${o.ratingText?`<p class="factsline">★ ${esc(o.ratingText)}</p>`:(o.rating!=null?`<p class="factsline">★ ${esc(o.rating)}${o.reviewCount?' · '+esc(o.reviewCount)+' reviews':''}</p>`:'')}
       ${o.perPerson?`<p class="factsline pp">${esc(o.perPerson)}</p>`:''}
       ${o.cancellation?`<p class="factsline">✓ ${esc(o.cancellation)}</p>`:''}
       ${o.note?`<p class="sub">${esc(o.note)}</p>`:''}
