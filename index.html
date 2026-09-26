@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
 <title>Holiday 2027</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynHTH5x6QhH3ePF6hgR5PvAWCvoc=" crossorigin="">
 <style>
 :root{
   --ink:#222;--muted:#717171;--line:#e8e8e8;--soft:#f7f7f7;--pink:#ff385c;
@@ -21,6 +22,20 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
 .chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:#fff;padding:9px 14px;font-size:13px;font-weight:700}.chip.on{background:#222;color:#fff;border-color:#222}
 .title{display:flex;align-items:end;justify-content:space-between;margin:22px 0 14px}.title h2{margin:0;font-size:22px;letter-spacing:-.5px}.title button{border:0;background:none;text-decoration:underline;font-size:13px;font-weight:700}
 .grid{display:grid;grid-template-columns:1fr;gap:24px}
+.country-wrap{margin:20px 0 2px}
+.country-card{width:100%;border:1px solid var(--line);background:linear-gradient(135deg,#f7fff8,#fff);border-radius:22px;padding:15px 16px;display:flex;align-items:center;gap:13px;text-align:left}
+.country-flag{width:52px;height:52px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:30px;box-shadow:0 4px 18px #0000000d;flex:0 0 auto}
+.country-copy{min-width:0;flex:1}.country-copy strong{display:block;font-size:17px;letter-spacing:-.2px}.country-copy span{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.35}
+.country-arrow{font-size:22px;color:#888}
+.mapbackdrop{position:fixed;inset:0;z-index:75;background:#0007;display:none;align-items:flex-end}.mapbackdrop.open{display:flex}
+.mapsheet{width:100%;background:#fff;border-radius:26px 26px 0 0;padding:14px 14px calc(18px + env(safe-area-inset-bottom));max-height:94vh;overflow:auto}
+.maphead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:4px 2px 10px}.maphead h2{margin:0;font-size:22px}.maphead p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.35}.mapclose{border:1px solid var(--line);background:#fff;border-radius:50%;width:40px;height:40px;font-size:18px;flex:0 0 auto}
+#portugalMapCanvas{height:52vh;min-height:360px;max-height:560px;border-radius:20px;overflow:hidden;background:#eef2f3}
+.mapnote{font-size:11px;color:#777;line-height:1.4;margin:9px 2px 0}
+.mappreview{display:none;margin-top:12px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}.mappreview.show{display:grid;grid-template-columns:104px 1fr}
+.mappreview img{width:104px;height:100%;min-height:112px;object-fit:cover;background:#eee}.mappreviewbody{padding:11px;min-width:0}.mappreviewbody b{display:block;font-size:14px;line-height:1.25}.mappreviewbody span{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:4px}.mapopen{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:var(--ink);text-decoration:none}
+.villa-pin{width:32px;height:32px;border-radius:50%;background:#222;color:#fff;border:3px solid #fff;box-shadow:0 3px 12px #0004;display:grid;place-items:center;font-weight:900;font-size:12px}
+@media(min-width:760px){.mapbackdrop{align-items:center;justify-content:center;padding:24px}.mapsheet{max-width:900px;border-radius:26px;padding:18px}.country-card{max-width:430px}}
 .empty{border:1px dashed #d9d9d9;border-radius:26px;padding:36px 24px;text-align:center;background:linear-gradient(180deg,#fff,#fbfbfb)}
 .empty .bubble{width:68px;height:68px;border-radius:22px;background:#fff0f3;color:var(--pink);display:grid;place-items:center;margin:0 auto 15px;font-size:30px}
 .empty h3{margin:0 0 8px;font-size:21px;letter-spacing:-.4px}.empty p{margin:0 auto;color:var(--muted);line-height:1.5;max-width:330px;font-size:14px}
@@ -88,6 +103,14 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
   </nav>
 </header>
 
+<section class="country-wrap">
+  <button class="country-card" id="portugalCountryCard" type="button">
+    <span class="country-flag">🇵🇹</span>
+    <span class="country-copy"><strong>Portugal</strong><span id="portugalCountryMeta">View all villa locations on the map</span></span>
+    <span class="country-arrow">›</span>
+  </button>
+</section>
+
 <div class="title"><h2>Ideas</h2><button id="sort">Top voted</button></div>
 <section class="grid" id="grid"></section>
 </main>
@@ -99,6 +122,26 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
   <button id="navAdd"><i>＋</i>Add</button>
   <button id="peopleBtn"><i>☺</i>People</button>
 </nav>
+
+<div class="mapbackdrop" id="mapModal">
+  <div class="mapsheet">
+    <div class="maphead">
+      <div><h2>Portugal villas</h2><p>Tap a pin to preview the property and open its listing.</p></div>
+      <button class="mapclose" id="mapClose" type="button" aria-label="Close map">×</button>
+    </div>
+    <div id="portugalMapCanvas" aria-label="Interactive map of Portugal villa options"></div>
+    <div class="mappreview" id="mapPreview">
+      <img id="mapPreviewImg" alt="">
+      <div class="mappreviewbody">
+        <b id="mapPreviewTitle"></b>
+        <span id="mapPreviewMeta"></span>
+        <span id="mapPreviewAccuracy"></span>
+        <a class="mapopen" id="mapPreviewLink" href="#" target="_blank" rel="noopener">Open listing ↗</a>
+      </div>
+    </div>
+    <p class="mapnote">Pins use the public location shown by the listing or its published address. Some holiday-rental sites deliberately show an approximate location until a booking is confirmed, so those pins are labelled approximate.</p>
+  </div>
+</div>
 
 <div class="backdrop" id="modal">
   <div class="sheet">
@@ -147,6 +190,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
 </div>
 
 <div class="toast" id="toast">Saved</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <script>
 const STORE_PROFILE='holiday2027-profile-v2';
@@ -159,6 +203,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-large-legeado",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.0941,
+    "lng": -8.2354,
+    "mapAccuracy": "Approximate · public Lageado/Areias de São João listing area",
     "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/277854/",
     "title": "Villa Legeado · 7 Bedrooms · Near the Strip",
     "guests": "~10 guests · 7 bedrooms · 9 bathrooms · sleeps up to 17",
@@ -181,6 +228,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-large-flores",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.11312,
+    "lng": -8.21363,
+    "mapAccuracy": "Public property/map coordinates",
     "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/226869/",
     "title": "Villa Flores · 7 Bedrooms + Sofa Bed",
     "guests": "~10 guests · 7 bedrooms · 6 bathrooms · sleeps up to 18",
@@ -203,6 +253,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-large-monte-poupa",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.12404,
+    "lng": -8.29305,
+    "mapAccuracy": "Approximate · public 8200-412 / Barrancos-Guia listing area",
     "url": "https://premiervillas.net/portugal/algarve/albufeira/monte-da-poupa",
     "title": "Monte da Poupa · 7 En-Suite Bedrooms",
     "guests": "~10 guests · 7 en-suite bedrooms · sleeps up to 15",
@@ -225,6 +278,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-large-candeias",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.07828,
+    "lng": -8.30906,
+    "mapAccuracy": "Public Vrbo listing pin",
     "url": "https://www.solmarvillas.com/destinations/portugal-villas/algarve/gale/villa-candeias",
     "title": "Villa Candeias · 7 Bedrooms · Walk to Beach",
     "guests": "~10 guests · 7 bedrooms · 8 bathrooms · sleeps 14",
@@ -247,6 +303,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-large-heated-jacuzzi",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.10683,
+    "lng": -8.23633,
+    "mapAccuracy": "Public Vrbo listing pin",
     "url": "https://www.vrbo.com/en-gb/p8122879",
     "title": "7+1 Bedroom Villa · Heated Pool + Jacuzzi",
     "guests": "~10 guests · 8 bedrooms · up to 16 guests",
@@ -269,6 +328,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-large-villa-bella",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.08849,
+    "lng": -8.23745,
+    "mapAccuracy": "Public Vrbo listing pin",
     "url": "https://www.vrbo.com/en-gb/p452980",
     "title": "Villa Bella · 8 Bedrooms · Beach + Strip",
     "guests": "~10 guests · 8 bedrooms · large-group villa",
@@ -291,6 +353,9 @@ const SEEDED_OPTIONS=[
     "id": "seed-fallback-emilie",
     "type": "stay",
     "country": "Portugal",
+    "lat": 37.09219,
+    "lng": -8.23002,
+    "mapAccuracy": "Approximate · Aldeia Turística / Strip listing area",
     "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/293921/",
     "title": "Fallback · Villa Emilie · 6 Bedrooms + Sofa Bed",
     "guests": "~10 guests · 6 bedrooms + sofa bed · up to 13",
@@ -325,6 +390,65 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=msg=>{const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>el.classList.remove('show'),1700)};
 const persist=()=>localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
+let portugalMap=null;
+let portugalMarkers=[];
+
+function mappedPortugalOptions(){
+  return options.filter(o=>o.type==='stay'&&o.country==='Portugal'&&Number.isFinite(Number(o.lat))&&Number.isFinite(Number(o.lng)));
+}
+function updatePortugalCountryCard(){
+  const n=mappedPortugalOptions().length;
+  const el=$('portugalCountryMeta');
+  if(el)el.textContent=`${n} mapped villa${n===1?'':'s'} · tap to explore locations`;
+}
+function showMapPreview(o){
+  $('mapPreviewTitle').textContent=o.title||'Villa';
+  $('mapPreviewMeta').textContent=[o.price,o.location].filter(Boolean).join(' · ');
+  $('mapPreviewAccuracy').textContent=o.mapAccuracy||'Public listing location';
+  $('mapPreviewLink').href=o.url||'#';
+  const img=$('mapPreviewImg');
+  if(o.image){img.src=o.image;img.style.display='block'}else{img.removeAttribute('src');img.style.display='none'}
+  $('mapPreview').classList.add('show');
+}
+function buildPortugalMap(){
+  if(!window.L)return;
+  const mapped=mappedPortugalOptions();
+  if(!mapped.length)return;
+  if(!portugalMap){
+    portugalMap=L.map('portugalMapCanvas',{zoomControl:true,scrollWheelZoom:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'&copy; OpenStreetMap contributors'
+    }).addTo(portugalMap);
+  }
+  portugalMarkers.forEach(m=>m.remove());
+  portugalMarkers=[];
+  mapped.forEach((o,i)=>{
+    const icon=L.divIcon({
+      className:'',
+      html:`<div class="villa-pin">${i+1}</div>`,
+      iconSize:[32,32],
+      iconAnchor:[16,16]
+    });
+    const marker=L.marker([Number(o.lat),Number(o.lng)],{icon}).addTo(portugalMap);
+    marker.on('click',()=>showMapPreview(o));
+    marker.bindTooltip(o.title||'Villa',{direction:'top',offset:[0,-10]});
+    portugalMarkers.push(marker);
+  });
+  portugalMap.fitBounds(L.latLngBounds(mapped.map(o=>[Number(o.lat),Number(o.lng)])),{padding:[34,34],maxZoom:12});
+  setTimeout(()=>portugalMap.invalidateSize(),80);
+}
+function openPortugalMap(){
+  $('mapModal').classList.add('open');
+  $('mapPreview').classList.remove('show');
+  document.body.style.overflow='hidden';
+  setTimeout(buildPortugalMap,80);
+}
+function closePortugalMap(){
+  $('mapModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
 
 function hostLabel(url){
   try{
@@ -387,6 +511,7 @@ function render(){
     return o.type===currentFilter;
   });
   $('grid').innerHTML=shown.length?shown.map(card).join(''):emptyState();
+  updatePortugalCountryCard();
 }
 function toggleVote(id){
   const o=options.find(x=>String(x.id)===String(id)); if(!o)return;
@@ -436,6 +561,10 @@ const openModal=()=>{modal.classList.add('open');setTimeout(()=>$('link').focus(
 const closeModal=()=>modal.classList.remove('open');
 $('add').onclick=openModal;$('navAdd').onclick=openModal;$('cancel').onclick=closeModal;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+$('portugalCountryCard').onclick=openPortugalMap;
+$('mapClose').onclick=closePortugalMap;
+$('mapModal').addEventListener('click',e=>{if(e.target===$('mapModal'))closePortugalMap()});
+
 
 function getAirbnbListing(url){
   try{
