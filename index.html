@@ -158,6 +158,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-large-legeado",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/277854/",
     "title": "Villa Legeado · 7 Bedrooms · Near the Strip",
     "guests": "~10 guests · 7 bedrooms · 9 bathrooms · sleeps up to 17",
@@ -179,6 +180,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-large-flores",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/226869/",
     "title": "Villa Flores · 7 Bedrooms + Sofa Bed",
     "guests": "~10 guests · 7 bedrooms · 6 bathrooms · sleeps up to 18",
@@ -200,6 +202,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-large-monte-poupa",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://premiervillas.net/portugal/algarve/albufeira/monte-da-poupa",
     "title": "Monte da Poupa · 7 En-Suite Bedrooms",
     "guests": "~10 guests · 7 en-suite bedrooms · sleeps up to 15",
@@ -221,6 +224,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-large-candeias",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://www.solmarvillas.com/destinations/portugal-villas/algarve/gale/villa-candeias",
     "title": "Villa Candeias · 7 Bedrooms · Walk to Beach",
     "guests": "~10 guests · 7 bedrooms · 8 bathrooms · sleeps 14",
@@ -242,6 +246,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-large-heated-jacuzzi",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://www.vrbo.com/en-gb/p8122879",
     "title": "7+1 Bedroom Villa · Heated Pool + Jacuzzi",
     "guests": "~10 guests · 8 bedrooms · up to 16 guests",
@@ -263,6 +268,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-large-villa-bella",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://www.vrbo.com/en-gb/p452980",
     "title": "Villa Bella · 8 Bedrooms · Beach + Strip",
     "guests": "~10 guests · 8 bedrooms · large-group villa",
@@ -284,6 +290,7 @@ const SEEDED_OPTIONS=[
   {
     "id": "seed-fallback-emilie",
     "type": "stay",
+    "country": "Portugal",
     "url": "https://www.simplyowners.net/portugal/central-algarve/albufeira/p/293921/",
     "title": "Fallback · Villa Emilie · 6 Bedrooms + Sofa Bed",
     "guests": "~10 guests · 6 bedrooms + sofa bed · up to 13",
@@ -354,10 +361,11 @@ function card(o){
   const voted=!!o.voted;
   const img=o.image?`<img src="${esc(o.image)}" alt="">`:`<div style="width:100%;height:100%;display:grid;place-items:center;font-size:42px;color:#aaa;background:#f3f3f3">${o.type==='flight'?'✈':o.type==='stay'?'⌂':'☀'}</div>`;
   return `<article class="card option" data-id="${esc(o.id)}" data-type="${esc(o.type)}" data-votes="${o.votes||0}">
-    <div class="photo">${img}<span class="badge">${esc(o.source||hostLabel(o.url))}</span><button class="heart ${voted?'on':''}" data-vote="${esc(o.id)}">${voted?'♥':'♡'}</button></div>
+    <div class="photo">${img}<span class="badge">${esc(o.source||hostLabel(o.url))}</span><button type="button" class="heart ${voted?'on':''}" data-vote="${esc(o.id)}" aria-pressed="${voted?'true':'false'}" aria-label="${voted?'Remove from shortlist':'Add to shortlist'}">${voted?'♥':'♡'}</button></div>
     <div class="body">
       <div class="row"><h3>${esc(o.title||'Untitled option')}</h3><span class="price">${esc(o.price||'')}</span></div>
       ${(o.dates||o.guests)?`<p class="factsline">${[o.dates,o.guests].filter(Boolean).map(esc).join(' · ')}</p>`:''}
+      ${o.country?`<p class="factsline">🇵🇹 ${esc(o.country)}</p>`:''}
       ${o.location?`<p class="factsline">📍 ${esc(o.location)}</p>`:''}
       ${o.ratingText?`<p class="factsline">★ ${esc(o.ratingText)}</p>`:(o.rating!=null?`<p class="factsline">★ ${esc(o.rating)}${o.reviewCount?' · '+esc(o.reviewCount)+' reviews':''}</p>`:'')}
       ${o.perPerson?`<p class="factsline pp">${esc(o.perPerson)}</p>`:''}
@@ -379,17 +387,37 @@ function render(){
     return o.type===currentFilter;
   });
   $('grid').innerHTML=shown.length?shown.map(card).join(''):emptyState();
-  document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=()=>toggleVote(b.dataset.vote));
-  document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeOption(b.dataset.delete));
 }
 function toggleVote(id){
-  const o=options.find(x=>x.id===id); if(!o)return;
-  o.voted=!o.voted; o.votes=Math.max(0,(o.votes||0)+(o.voted?1:-1)); persist();render();
+  const o=options.find(x=>String(x.id)===String(id)); if(!o)return;
+  const wasVoted=!!o.voted;
+  o.voted=!wasVoted;
+  o.votes=Math.max(0,Number(o.votes||0)+(o.voted?1:-1));
+  o.lastVotedAt=Date.now();
+  persist();
+  render();
+  toast(o.voted?'Added to shortlist ♥':'Removed from shortlist');
 }
 function removeOption(id){
   const o=options.find(x=>x.id===id); if(!o)return;
   if(confirm(`Remove "${o.title}" from this browser?`)){options=options.filter(x=>x.id!==id);persist();render();toast('Removed')}
 }
+
+$('grid').addEventListener('click',e=>{
+  const heart=e.target.closest('[data-vote]');
+  if(heart){
+    e.preventDefault();
+    e.stopPropagation();
+    toggleVote(heart.dataset.vote);
+    return;
+  }
+  const remove=e.target.closest('[data-delete]');
+  if(remove){
+    e.preventDefault();
+    e.stopPropagation();
+    removeOption(remove.dataset.delete);
+  }
+});
 
 $('avatar').addEventListener('change',e=>{
   const f=e.target.files?.[0]; if(!f)return;
