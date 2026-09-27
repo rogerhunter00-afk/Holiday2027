@@ -181,7 +181,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1
     <div class="field"><label>Type</label><select id="type"><option value="stay">Stay</option><option value="flight">Flight</option><option value="activity">Thing to do</option></select></div>
     <div class="field"><label>Title</label><input id="nt" placeholder="We’ll try to fill this from the link"></div>
     <div class="field"><label>Dates <small>from screenshot</small></label><input id="nd" placeholder="e.g. 8–15 May 2027"></div>
-    <div class="field"><label>Guests <small>from screenshot</small></label><input id="ng" placeholder="e.g. 8 adults"></div>
+    <div class="field"><label>Guests / bedrooms <small>6+ bedrooms for stays</small></label><input id="ng" placeholder="e.g. 10 adults · 7 bedrooms"></div>
     <div class="field"><label>Total price <small>from screenshot</small></label><input id="np" placeholder="e.g. £1,788.75 total"></div>
     <div class="field"><label>Approx. per person <small>calculated</small></label><input id="npp" placeholder="e.g. £223.59 pp"></div>
     <div class="field"><label>Quick note <small>optional</small></label><textarea id="nn" rows="3" placeholder="Pool, near town, free cancellation..."></textarea></div>
@@ -385,6 +385,46 @@ if(!localStorage.getItem(STORE_SEED)){
   localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
   localStorage.setItem(STORE_SEED,'1');
 }
+
+// Keep built-in villa data current on devices that already saved an older copy.
+// Preserve device-specific state such as hearts/votes, but refresh static listing
+// data including Portugal + public map coordinates.
+{
+  const seedById=new Map(SEEDED_OPTIONS.map(o=>[String(o.id),o]));
+  let changed=false;
+
+  options=options.map(o=>{
+    const seed=seedById.get(String(o.id));
+    if(!seed)return o;
+    const localState={
+      voted:!!o.voted,
+      votes:Number(o.votes||0),
+      lastVotedAt:o.lastVotedAt
+    };
+    const merged={...o,...seed,...localState};
+    if(JSON.stringify(merged)!==JSON.stringify(o))changed=true;
+    return merged;
+  });
+
+  // Remove accommodation cards that clearly advertise fewer than 6 bedrooms.
+  // Unknown bedroom counts are left alone rather than guessed.
+  const bedroomCount=o=>{
+    const text=[o.title,o.guests,o.note].filter(Boolean).join(' ');
+    const matches=[...text.matchAll(/(\d+)\s*(?:\+\s*\d+\s*)?bed(?:room)?s?/gi)];
+    if(!matches.length)return null;
+    return Math.max(...matches.map(m=>Number(m[1])));
+  };
+  const before=options.length;
+  options=options.filter(o=>{
+    if(o.type!=='stay')return true;
+    const n=bedroomCount(o);
+    return n===null || n>=6;
+  });
+  if(options.length!==before)changed=true;
+
+  if(changed)localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
+}
+
 let draftImage='', draftSource='', draftTravelMeta={}, currentFilter='all', screenshotFile=null, screenshotUrl='';
 
 const $=id=>document.getElementById(id);
@@ -761,6 +801,13 @@ $('ocrBtn').onclick=async()=>{
 };
 
 $('save').onclick=()=>{
+  const selectedType=$('type').value;
+  const bedroomText=[$('nt').value,$('ng').value,$('nn').value].join(' ');
+  const bedMatch=bedroomText.match(/(\d+)\s*(?:\+\s*\d+\s*)?bed(?:room)?s?/i);
+  if(selectedType==='stay'&&bedMatch&&Number(bedMatch[1])<6){
+    setStatus('Minimum 6 bedrooms for accommodation options. This stay was not added.','err');
+    return;
+  }
   const url=$('link').value.trim(), title=$('nt').value.trim();
   if(!/^https?:\/\//i.test(url)){setStatus('Add a valid link first.','err');return}
   if(!title){$('nt').focus();return}
