@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Holiday 2027</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
@@ -199,6 +202,26 @@ const STORE_OPTIONS='holiday2027-options-v2';
 const colours=['#FDE2E4','#FAD2E1','#E2ECE9','#BEE1E6','#DFE7FD','#E2EAFC','#CDEAC0','#FFF1E6','#FCF6BD','#E4C1F9','#D8E2DC','#FFE5D9','#DDE5B6','#CFE8EF'];
 const STORE_SEED='holiday2027-portugal-large-stays-v2';
 const LEGACY_SEED_IDS=["seed-albufeira-strip-airbnb","seed-oura-villa2-vrbo","seed-villa-paula-booking","seed-rosa-old-town-airbnb","seed-gale-luxury-airbnb","seed-villa-verde-airbnb"];
+const LEGACY_STAY_URLS=new Set([
+  "https://www.airbnb.com/rooms/1079666223860516316",
+  "https://www.airbnb.co.uk/rooms/1079666223860516316",
+  "https://www.vrbo.com/en-gb/p10589229",
+  "https://www.booking.com/hotel/pt/villa-paula-with-private-pool-close-to-the-beach-and-strip.en-gb.html",
+  "https://www.airbnb.com/rooms/23698070",
+  "https://www.airbnb.co.uk/rooms/23698070",
+  "https://www.airbnb.com/rooms/46356657",
+  "https://www.airbnb.co.uk/rooms/46356657",
+  "https://www.airbnb.com/rooms/1089097886059282160",
+  "https://www.airbnb.co.uk/rooms/1089097886059282160"
+]);
+const LEGACY_STAY_TITLES=[
+  "Private Pool Villa · Walk to Beach & Strip",
+  "Villa 2 · Oura Beach",
+  "Villa Paula · Private Pool Close to Beach & Strip",
+  "Apartamento “Rosa” · Beach Old Town",
+  "Stunning Luxury Villa · Private Pool · Galé",
+  "Villa Verde · Private Pool Near the Beach"
+];
 const SEEDED_OPTIONS=[
   {
     "id": "seed-large-legeado",
@@ -386,43 +409,56 @@ if(!localStorage.getItem(STORE_SEED)){
   localStorage.setItem(STORE_SEED,'1');
 }
 
-// Keep built-in villa data current on devices that already saved an older copy.
-// Preserve device-specific state such as hearts/votes, but refresh static listing
-// data including Portugal + public map coordinates.
+// Reconcile accommodation data on every load.
+// Current built-in villas are authoritative; preserve local vote state for
+// matching current villas, retain non-stay ideas, and retain only manual stays
+// that clearly state 6+ bedrooms.
 {
+  const existing=Array.isArray(options)?options:[];
   const seedById=new Map(SEEDED_OPTIONS.map(o=>[String(o.id),o]));
-  let changed=false;
+  const seedByUrl=new Map(SEEDED_OPTIONS.map(o=>[String(o.url),o]));
+  const existingById=new Map(existing.map(o=>[String(o.id),o]));
+  const existingByUrl=new Map(existing.filter(o=>o.url).map(o=>[String(o.url),o]));
 
-  options=options.map(o=>{
-    const seed=seedById.get(String(o.id));
-    if(!seed)return o;
-    const localState={
-      voted:!!o.voted,
-      votes:Number(o.votes||0),
-      lastVotedAt:o.lastVotedAt
-    };
-    const merged={...o,...seed,...localState};
-    if(JSON.stringify(merged)!==JSON.stringify(o))changed=true;
-    return merged;
-  });
-
-  // Remove accommodation cards that clearly advertise fewer than 6 bedrooms.
-  // Unknown bedroom counts are left alone rather than guessed.
   const bedroomCount=o=>{
     const text=[o.title,o.guests,o.note].filter(Boolean).join(' ');
     const matches=[...text.matchAll(/(\d+)\s*(?:\+\s*\d+\s*)?bed(?:room)?s?/gi)];
     if(!matches.length)return null;
     return Math.max(...matches.map(m=>Number(m[1])));
   };
-  const before=options.length;
-  options=options.filter(o=>{
+
+  const isLegacyStay=o=>{
+    if(o.type!=='stay')return false;
+    if(LEGACY_SEED_IDS.includes(String(o.id)))return true;
+    if(o.url&&LEGACY_STAY_URLS.has(String(o.url)))return true;
+    return LEGACY_STAY_TITLES.some(t=>String(o.title||'').trim()===t);
+  };
+
+  const currentSeeds=SEEDED_OPTIONS.map(seed=>{
+    const prior=existingById.get(String(seed.id))||existingByUrl.get(String(seed.url));
+    return {
+      ...seed,
+      voted:prior?!!prior.voted:!!seed.voted,
+      votes:prior?Number(prior.votes||0):Number(seed.votes||0),
+      lastVotedAt:prior?.lastVotedAt
+    };
+  });
+
+  const seedIds=new Set(SEEDED_OPTIONS.map(o=>String(o.id)));
+  const seedUrls=new Set(SEEDED_OPTIONS.map(o=>String(o.url)));
+
+  const retainedExtras=existing.filter(o=>{
+    if(seedIds.has(String(o.id)))return false;
+    if(o.url&&seedUrls.has(String(o.url)))return false;
+    if(isLegacyStay(o))return false;
     if(o.type!=='stay')return true;
     const n=bedroomCount(o);
-    return n===null || n>=6;
+    return n!==null && n>=6;
   });
-  if(options.length!==before)changed=true;
 
-  if(changed)localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
+  options=[...currentSeeds,...retainedExtras];
+  localStorage.setItem(STORE_OPTIONS,JSON.stringify(options));
+  localStorage.setItem(STORE_SEED,'reconciled-v3');
 }
 
 let draftImage='', draftSource='', draftTravelMeta={}, currentFilter='all', screenshotFile=null, screenshotUrl='';
